@@ -1,0 +1,35 @@
+# Gitlab Continues Integration for Unreal Engine 4
+variables:
+  GIT_STRATEGY: none
+  GIT_CHECKOUT: "false"
+  ErrorActionPreference: STOP
+
+  # Unreal Engine 4 Project Settings
+  PROJECT_NAME: "IslandMainProject"
+  ENGINE_VERSION: "UE_4.22"
+  BUILD_CONFIGURATION: "Development"
+  ARCHIVE_NAME: "$PROJECT_NAME-$BUILD_CONFIGURATION-rev$CI_COMMIT_SHORT_SHA-x64"
+
+stages:
+  - buildproject
+  - package
+
+buildproject:
+  stage: buildproject
+  variables:
+    GIT_STRATEGY: fetch
+    GIT_CHECKOUT: "true"
+  script:
+    - "buildscripts/buildproject.ps1"
+
+package:
+  stage: package
+  only:
+    - web         # only upload the artifact when the build has been started through the interface
+    - schedules   # only upload the artifact when the build has been started through a schedule
+  script:
+    - echo "Uploading the artifacts to Gitlab..."
+  artifacts:
+    paths:
+      - Build/$ARCHIVE_NAME.zip
+    expire_in: 1 week
