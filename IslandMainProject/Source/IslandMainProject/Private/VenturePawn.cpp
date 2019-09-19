@@ -17,15 +17,14 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "AIController.h"
 
+
+#include "Public/PickUpBase.h"
 /* ----Useful HEAD
 #include "Public/APToolBase.h"
 #include "BuildingSystemPawn.h"
-#include "Public/APPickUP.h"
 #include "Public/APInteractItemBase.h"
-#include "Public/InventoryComponent.h"
 */
-
-
+#include "Public/InventoryComponent.h"
 
 AVenturePawn::AVenturePawn()
 {
@@ -78,9 +77,8 @@ AVenturePawn::AVenturePawn()
 
 	InteractPointComp = CreateDefaultSubobject<USceneComponent>(TEXT("InteractPointComp"));
 	InteractPointComp->SetupAttachment(RootComponent);
-	/* ----Useful HEAD
+
 	InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
-	*/
 }
 
 void AVenturePawn::Tick(float DeltaSeconds)
@@ -348,6 +346,19 @@ void AVenturePawn::RemoveItemFromInventory(FName itemID, int _amount)
 
 #pragma endregion
 */
+
+void AVenturePawn::OnMouseClick()
+{
+	// Trace to see what is under the mouse cursor
+	FHitResult Hit;
+	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
+
+	if (Hit.bBlockingHit)
+	{
+		SetNewMoveDestination(Hit);
+	}
+
+}
 /* ----Useful HEAD
 void AVenturePawn::InteractWithTool(AAPInteractItemBase* interactBase)
 {
@@ -368,56 +379,36 @@ void AVenturePawn::InteractWithTool(AAPInteractItemBase* interactBase)
 	}
 
 }
-
-void AVenturePawn::OnMouseClick()
-{
-	// Trace to see what is under the mouse cursor
-	FHitResult Hit;
-	Cast<AAncientWorldPlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-
-	if (Hit.bBlockingHit)
-	{
-		SetNewMoveDestination(Hit);
-	}
-
-}
-
-
-
+*/
 void AVenturePawn::SetNewMoveDestination(const FHitResult& outHit)
 {
-	APawn* const MyPawn = this;
-	if (MyPawn)
-	{
-		AAPInteractItemBase* interactBase = Cast<AAPInteractItemBase>(outHit.Actor);
+	/* ----Useful HEAD
+	AAPInteractItemBase* interactBase = Cast<AAPInteractItemBase>(outHit.Actor);
 
-		if (interactBase) {
-			float const Distance = FVector::Dist(outHit.ImpactPoint, MyPawn->GetActorLocation());
+	if (interactBase) {
+		float const Distance = FVector::Dist(outHit.ImpactPoint, MyPawn->GetActorLocation());
 
-			if ((Distance > 120.0f))
-			{
-				if (!interactBase->GetCanPawnInteract())
-					MoveTo(GetController(), outHit.ImpactPoint);
-				//UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, outHit.ImpactPoint);
-			}
-
-			if (interactBase->GetCanPawnInteract()) {
-				InteractWithTool(interactBase);
-				FRotator newROt = (outHit.Actor->GetActorLocation() - GetActorLocation()).Rotation();
-				newROt.Pitch = 0;
-				newROt.Roll = 0;
-				SetActorRotation(newROt);
-			}
-		}
-		else {
-			// not interacting with interactItemBase
-			InteractWithTool(nullptr);
+		if ((Distance > 120.0f))
+		{
+			if (!interactBase->GetCanPawnInteract())
+				MoveTo(GetController(), outHit.ImpactPoint);
+			//UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, outHit.ImpactPoint);
 		}
 
-
+		if (interactBase->GetCanPawnInteract()) {
+			InteractWithTool(interactBase);
+			FRotator newROt = (outHit.Actor->GetActorLocation() - GetActorLocation()).Rotation();
+			newROt.Pitch = 0;
+			newROt.Roll = 0;
+			SetActorRotation(newROt);
+		}
 	}
-}*/
-
+	else {
+		// not interacting with interactItemBase
+		InteractWithTool(nullptr);
+	}
+	*/
+}
 UPathFollowingComponent* AVenturePawn::InitNavigationControl(AController& Controller)
 {
 

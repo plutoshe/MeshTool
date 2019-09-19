@@ -25,9 +25,9 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns CursorToWorld subobject **/
 	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
-	/* ----Useful HEAD
+
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() { return InventoryComp; }
-	*/
+
 
 	FORCEINLINE  FVector GetInteractPointLocation() { return InteractPointComp->GetComponentLocation(); }
 	FORCEINLINE  FRotator GetInteractPointRotation() { return InteractPointComp->GetComponentRotation(); }
@@ -44,9 +44,7 @@ protected:
 	void Jump();
 	void Crouch();
 	void UnCrouch();
-	/* ----Useful HEAD
 	void OnMouseClick();
-	*/
 #pragma endregion
 
 	bool m_bRotating;
@@ -56,9 +54,8 @@ protected:
 
 	void PerformCameraRotation(float DeltaSeconds);
 
-	/* ----Useful HEAD
 	void SetNewMoveDestination(const FHitResult& outHit);
-	*/
+
 	// Navigation component
 	class UPathFollowingComponent* m_PFollowComp;
 	UFUNCTION(BlueprintCallable, Category = "AI|Navigation")
@@ -68,10 +65,10 @@ protected:
 
 	class UPathFollowingComponent* InitNavigationControl(AController& Controller);
 
-	/* ----Useful HEAD
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UInventoryComponent* InventoryComp;
+	/* ----Useful HEAD
 	class AAPToolBase* m_usingTool;
 	*/
 private:
