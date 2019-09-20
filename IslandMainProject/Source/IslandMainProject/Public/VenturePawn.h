@@ -28,9 +28,6 @@ public:
 
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() { return InventoryComp; }
 
-
-	FORCEINLINE  FVector GetInteractPointLocation() { return InteractPointComp->GetComponentLocation(); }
-	FORCEINLINE  FRotator GetInteractPointRotation() { return InteractPointComp->GetComponentRotation(); }
 	/* ----Useful HEAD
 	void InteractWithTool(class AAPInteractItemBase* interactBase);
 	*/
@@ -56,6 +53,16 @@ protected:
 
 	class UPathFollowingComponent* InitNavigationControl(AController& Controller);
 
+#pragma region Interactable
+	void OnInteract();
+	class AInteractableBase* m_currentInteractable;
+	UFUNCTION()
+		void OnInteractableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+	UFUNCTION()
+		void OnInteractableLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+#pragma endregion
+
+
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 		class UInventoryComponent* InventoryComp;
@@ -76,7 +83,10 @@ private:
 		class UDecalComponent* CursorToWorld;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
-		class USceneComponent* InteractPointComp;
+		class USphereComponent* InteractPointComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+		class UCameraControlComponent* CameraControlComp;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 

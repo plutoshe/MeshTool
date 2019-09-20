@@ -11,7 +11,7 @@
 #include "Materials/Material.h"
 #include "Engine/World.h"
 #include "IslandMainProjectGameModeBase.h"
-#include "Components/SceneComponent.h"
+#include "Components/SphereComponent.h"
 #include "Engine/Classes/Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -22,9 +22,10 @@
 /* ----Useful HEAD
 #include "Public/APToolBase.h"
 #include "BuildingSystemPawn.h"
-#include "Public/APInteractItemBase.h"
 */
+#include "Public/InteractableBase.h"
 #include "Public/InventoryComponent.h"
+#include "Public/CameraControlComponent.h"
 
 AVenturePawn::AVenturePawn()
 {
@@ -65,10 +66,16 @@ AVenturePawn::AVenturePawn()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	InteractPointComp = CreateDefaultSubobject<USceneComponent>(TEXT("InteractPointComp"));
+	// Interact Point component
+	InteractPointComp = CreateDefaultSubobject<USphereComponent>(TEXT("InteractPointComp"));
 	InteractPointComp->SetupAttachment(RootComponent);
+	InteractPointComp->SetSphereRadius(32.f);
+	InteractPointComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	InteractPointComp->OnComponentBeginOverlap.AddDynamic(this, &AVenturePawn::OnInteractableEnter);
+	InteractPointComp->OnComponentEndOverlap.AddDynamic(this, &AVenturePawn::OnInteractableLeft);
 
 	InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
+	CameraControlComp = CreateDefaultSubobject<UCameraControlComponent>(TEXT("CameraControlComp"));
 }
 
 void AVenturePawn::Tick(float DeltaSeconds)
@@ -105,9 +112,8 @@ void AVenturePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AVenturePawn::Jump);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AVenturePawn::Crouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AVenturePawn::UnCrouch);
-	/* ----Useful HEAD
-	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnMouseClick);
-	*/
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnInteract);
+	
 }
 
 void AVenturePawn::MoveForward(float axis)
@@ -230,6 +236,41 @@ UPathFollowingComponent* AVenturePawn::InitNavigationControl(AController& Contro
 
 	return PathFollowingComp;
 
+}
+
+void AVenturePawn::OnInteract()
+{
+	if (m_currentInteractable != nullptr) {
+		m_currentInteractable->Interact();
+	}
+}
+
+void AVenturePawn::OnInteractableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
+		AInteractableBase* interactBase = Cast<AInteractableBase>(OtherActor);
+		if (interactBase){
+			interactBase->SetCanInteract(true);
+			interactBase->EnableInputHint(FName("E"));
+			UE_LOG(LogTemp, Log, TEXT("Interact Enter"));
+			m_currentInteractable = interactBase;
+		}
+	}
+
+}
+
+void AVenturePawn::OnInteractableLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
+		AInteractableBase* interactBase = Cast<AInteractableBase>(OtherActor);
+		if (interactBase) {
+			interactBase->SetCanInteract(false);
+			interactBase->DisableInputHint();
+			interactBase->UnInteract();
+			m_currentInteractable = nullptr;
+
+		}
+	}
 }
 
 void AVenturePawn::MoveTo(AController* i_Controller, const FVector& GoalLocation)
