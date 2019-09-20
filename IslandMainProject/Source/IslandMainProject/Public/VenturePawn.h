@@ -39,20 +39,11 @@ protected:
 #pragma region PlayerInputFunctions
 	void MoveForward(float axis);
 	void MoveRight(float axis);
-	void RotateCamera90Clockwise();
-	void RotateCamera90CounterClockwise();
 	void Jump();
 	void Crouch();
 	void UnCrouch();
 	void OnMouseClick();
 #pragma endregion
-
-	bool m_bRotating;
-	FRotator m_DestRotator;
-	UPROPERTY(EditDefaultsOnly, Category = Camera)
-		float m_CameraRotateSpeed;
-
-	void PerformCameraRotation(float DeltaSeconds);
 
 	void SetNewMoveDestination(const FHitResult& outHit);
 
