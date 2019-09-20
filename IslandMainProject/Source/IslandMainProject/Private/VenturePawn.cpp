@@ -45,18 +45,10 @@ AVenturePawn::AVenturePawn()
 	// Create a camera boom...
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->bAbsoluteRotation = true; // Don't want arm to rotate when character does
-	CameraBoom->TargetArmLength = 800.f;
-	CameraBoom->RelativeRotation = FRotator(-60.f, 0.f, 0.f);
-	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
-	CameraBoom->bInheritPitch = false;
-	CameraBoom->bInheritRoll = false;
-	CameraBoom->bInheritYaw = false;
 
 	// Create a camera...
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
 	CameraComp->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	CameraComp->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 	// Create a decal in the world to show the cursor's location
 	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
@@ -72,8 +64,6 @@ AVenturePawn::AVenturePawn()
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
-
-	m_CameraRotateSpeed = 30.f;
 
 	InteractPointComp = CreateDefaultSubobject<USceneComponent>(TEXT("InteractPointComp"));
 	InteractPointComp->SetupAttachment(RootComponent);
@@ -97,8 +87,6 @@ void AVenturePawn::Tick(float DeltaSeconds)
 			CursorToWorld->SetWorldRotation(CursorR);
 		}
 	}
-
-	PerformCameraRotation(DeltaSeconds);
 }
 void AVenturePawn::BeginPlay()
 {
@@ -117,8 +105,6 @@ void AVenturePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AVenturePawn::Jump);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AVenturePawn::Crouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AVenturePawn::UnCrouch);
-	PlayerInputComponent->BindAction("RotateCameraC", IE_Pressed, this, &AVenturePawn::RotateCamera90Clockwise);
-	PlayerInputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &AVenturePawn::RotateCamera90CounterClockwise);
 	/* ----Useful HEAD
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnMouseClick);
 	*/
@@ -140,24 +126,6 @@ void AVenturePawn::MoveRight(float axis)
 
 }
 
-void AVenturePawn::RotateCamera90Clockwise()
-{
-	if (!m_bRotating) {
-		m_DestRotator = CameraBoom->GetComponentRotation();
-		m_DestRotator.Add(0, 90, 0);
-		m_bRotating = true;
-	}
-}
-
-void AVenturePawn::RotateCamera90CounterClockwise()
-{
-	if (!m_bRotating) {
-		m_DestRotator = CameraBoom->GetComponentRotation();
-		m_DestRotator.Add(0, -90, 0);
-		m_bRotating = true;
-	}
-}
-
 void AVenturePawn::Jump()
 {
 	Super::Jump();
@@ -176,176 +144,6 @@ void AVenturePawn::UnCrouch()
 
 
 #pragma endregion
-
-void AVenturePawn::PerformCameraRotation(float DeltaSeconds)
-{
-	if (m_bRotating) {
-		CameraBoom->SetWorldRotation(FMath::RInterpTo(CameraBoom->GetComponentRotation(), m_DestRotator, DeltaSeconds, m_CameraRotateSpeed));
-		if (CameraBoom->GetComponentRotation().Equals(m_DestRotator, 0.01f)) {
-			m_bRotating = false;
-			CameraBoom->SetWorldRotation(m_DestRotator);
-		}
-	}
-}
-/*
-#pragma region InventorySystem
-
-
-void AVenturePawn::SpawnUsefulTools()
-{
-	AAncientWorldGameMode* GM = Cast<AAncientWorldGameMode>(GetWorld()->GetAuthGameMode());
-	TArray<TSubclassOf<AAPToolBase>> spawnList = GM->GetSpawnToolList();
-
-	for (TSubclassOf<AAPToolBase> toolClass : spawnList)
-	{
-		FActorSpawnParameters ActorSpawnParams;
-		ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		AAPToolBase* spawnedTool = GetWorld()->SpawnActor<AAPToolBase>(toolClass, InteractPointComp->GetComponentLocation(), InteractPointComp->GetComponentRotation(), ActorSpawnParams);
-		// Add fname / spawn tool to the tool base
-		m_spawnedToolList.Add(spawnedTool->m_ItemID, spawnedTool);
-		// Disable the tool
-		spawnedTool->SetOwner(this);
-		spawnedTool->DeSelected();
-	}
-}
-void AVenturePawn::SetSelectingItem(FInventoryItem* _item)
-{
-	if (_item != nullptr) {
-		// Deselected previous one
-		if (m_currentItem) {
-			AAPToolBase* previous_Tool = *m_spawnedToolList.Find(m_currentItem->ItemID);
-			if (previous_Tool) {
-				previous_Tool->OnDeSelected();
-			}
-		}
-		else {
-			UE_LOG(LogTemp, Log, TEXT("No previous item"));
-		}
-
-		// Select the current one
-		m_currentItem = _item;
-		AAPToolBase* currentTool = *m_spawnedToolList.Find(m_currentItem->ItemID);
-		if (currentTool) {
-			m_usingTool = currentTool;
-			currentTool->OnSelected();
-		}
-
-		UE_LOG(LogTemp, Log, TEXT("Using: %s"), *m_currentItem->ItemID.ToString());
-	}
-
-}
-
-void AVenturePawn::ClearItem()
-{
-	if (m_currentItem != nullptr) {
-		// Deselected previous one
-		AAPToolBase* previousItem = *m_spawnedToolList.Find(m_currentItem->ItemID);
-		if (previousItem) {
-			previousItem->OnDeSelected();
-		}
-
-		// clear
-		m_currentItem = nullptr;
-		m_usingTool = nullptr;
-		UE_LOG(LogTemp, Log, TEXT("Clear my hand"));
-
-	}
-}
-
-void AVenturePawn::ThrowItem(const FInventoryItem& _spawnItem)
-{
-	if (!_spawnItem.ItemID.IsEqual(TEXT("None"))) {
-		TSubclassOf<AAPPickUP> spawnedClass = _spawnItem.ItemPickUp;
-		FActorSpawnParameters spawnPara;
-		spawnPara.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		AAPPickUP* spawnActor = GetWorld()->SpawnActor<AAPPickUP>(spawnedClass,GetActorLocation() + GetActorForwardVector() * 30.f, FRotator::ZeroRotator,spawnPara);
-
-		spawnActor->AddImpulseToOverlapComp(GetActorForwardVector(), 500.f);
-	}
-}
-
-void AVenturePawn::AddItemToInventory(FName itemID)
-{
-	AAncientWorldGameMode* GM = Cast<AAncientWorldGameMode>(GetWorld()->GetAuthGameMode());
-
-	UDataTable* table = GM->GetItemDB();
-
-	FInventoryItem* ItemToAdd = table->FindRow<FInventoryItem>(itemID, "");
-
-	if (ItemToAdd) {
-		bool repeatedItem = false;
-		int exisitID = 0;
-		for (int i = 0; i < Inventory.Num(); i++)
-		{
-			if (Inventory[i].ItemID.IsEqual(ItemToAdd->ItemID) && ItemToAdd->bCanStack) {
-				repeatedItem = true;
-				exisitID = i;
-				break;
-			}
-		}
-		if (repeatedItem) {
-			Inventory[exisitID].Value++;
-			OnAddExistingItem(itemID);
-			UE_LOG(LogTemp, Log, TEXT("Item [%s] already exist, increase to value [%d]"), *Inventory[exisitID].Name.ToString(), Inventory[exisitID].Value);
-		}
-		else {
-			Inventory.Add(*ItemToAdd);
-			OnAddNewItem(*ItemToAdd);
-			UE_LOG(LogTemp, Log, TEXT("Add Item [%s] to inventory, it's value is [%d]"), *ItemToAdd->Name.ToString(), ItemToAdd->Value);
-
-		}
-
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid ItemID"));
-	}
-}
-
-void AVenturePawn::SwitchToItem(int slotID)
-{
-	if (Inventory.Num() <= slotID) { ClearItem(); return; }
-
-	SetSelectingItem(&Inventory[slotID]);
-}
-
-v
-
-void AVenturePawn::RemoveItemFromInventory(FName itemID, int _amount)
-{
-	FInventoryItem* tempItem = nullptr;
-	int idx = -1;
-	for (int i = 0; i < Inventory.Num(); i++)
-	{
-		if (Inventory[i].ItemID.IsEqual(itemID)) {
-			tempItem = &Inventory[i];
-			idx = i;
-			break;
-		}
-	}
-	if (tempItem != nullptr) {
-		tempItem->Value -= _amount;
-		UE_LOG(LogTemp, Log, TEXT("%s Amount of item: %d"), *tempItem->ItemID.ToString(), tempItem->Value);
-
-		if (tempItem->Value <= 0) {
-			tempItem->Value = 0;
-
-			// if current using one is going to be removed
-			if (m_currentItem != nullptr && m_currentItem->ItemID.IsEqual(Inventory[idx].ItemID)) {
-				ClearItem();
-			}
-			// remove the used item
-			Inventory.RemoveAt(idx);
-			UE_LOG(LogTemp, Log, TEXT("Size of inventory after remove item: %d"), Inventory.Num());
-		}
-	}
-
-
-}
-
-#pragma endregion
-*/
 
 void AVenturePawn::OnMouseClick()
 {
