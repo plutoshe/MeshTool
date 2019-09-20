@@ -25,6 +25,7 @@
 */
 #include "Public/InteractableBase.h"
 #include "Public/InventoryComponent.h"
+#include "Public/CameraControlComponent.h"
 
 AVenturePawn::AVenturePawn()
 {
@@ -65,7 +66,6 @@ AVenturePawn::AVenturePawn()
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
 
-	m_CameraRotateSpeed = 30.f;
 	// Interact Point component
 	InteractPointComp = CreateDefaultSubobject<USphereComponent>(TEXT("InteractPointComp"));
 	InteractPointComp->SetupAttachment(RootComponent);
@@ -75,6 +75,7 @@ AVenturePawn::AVenturePawn()
 	InteractPointComp->OnComponentEndOverlap.AddDynamic(this, &AVenturePawn::OnInteractableLeft);
 
 	InventoryComp = CreateDefaultSubobject<UInventoryComponent>(TEXT("Inventory Component"));
+	CameraControlComp = CreateDefaultSubobject<UCameraControlComponent>(TEXT("CameraControlComp"));
 }
 
 void AVenturePawn::Tick(float DeltaSeconds)
