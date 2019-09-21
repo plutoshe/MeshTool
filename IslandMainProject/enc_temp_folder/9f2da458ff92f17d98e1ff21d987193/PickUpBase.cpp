@@ -18,11 +18,11 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToAllChannels(ECR_Block);
 	OverlapComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
-	//OverlapComp->SetSimulatePhysics(true);
+	OverlapComp->SetSimulatePhysics(true);
 
 	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
 
-	OverlapComp->SetSphereRadius(PickupRadius);
+	OverlapComp->SetSphereRadius(200.f);
 
 	RootComponent = OverlapComp;
 
@@ -30,24 +30,24 @@ APickUpBase::APickUpBase()
 	SuperMesh->SetupAttachment(RootComponent);
 	SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	m_floatingEffectSpeed = 700.f;
-	BAbleToPickup = false;
-	RespawnTime = 1.4f;
+	m_MoveSpeed = 700.f;
+	m_bCanMoveToPlayer = false;
+	m_timeAvoidPickUpAfterSpawn = 1.4f;
 
 	m_thresholdToCollect = 3;
-	m_floatingEffectRange = 30;
-	m_floatingEffectFrequency = 3;
+	m_floatingEffectDistance = 30;
+	m_floatingEffectSpeed = 3;
 }
 
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
 		AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
-		if (characterBase && BAbleToPickup) {
+		if (characterBase && m_bCanMoveToPlayer) {
 			// Move to character
 			m_owner = characterBase;
 
-			m_bIsGetCollected = true;
+			m_bMovingToPlayer = true;
 
 			OverlapComp->SetSimulatePhysics(false);
 			OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -59,9 +59,9 @@ void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* 
 	}
 }
 
-void APickUpBase::AbleToPickUp()
+void APickUpBase::AllowToPickUp()
 {
-	BAbleToPickup = true;
+	m_bCanMoveToPlayer = true;
 
 }
 
@@ -75,30 +75,31 @@ void APickUpBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	m_floatingEffectOffset = FMath::RandRange(5, 20);
-	if (RandomizeScaleOnSpawn) {
+	m_startTime = FMath::RandRange(5, 20);
+	if (m_bRandomizeScaleOnSpawn) {
 		RandomizeScale();
 		UStaticMesh* rndMesh = GetRandomMesh();
 		if (rndMesh)
 			SuperMesh->SetStaticMesh(rndMesh);
 	}
 
-	GetWorldTimerManager().SetTimer(m_SpawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
+	GetWorldTimerManager().SetTimer(m_SpawnHandle, this, &APickUpBase::AllowToPickUp, m_timeAvoidPickUpAfterSpawn, false);
+
 }
 
 void APickUpBase::GravitateTowardPlayer(float deltaTime)
 {
 	FVector dir = m_owner->GetActorLocation() - GetActorLocation();
-	SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_floatingEffectSpeed * deltaTime);
+	SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_MoveSpeed * deltaTime);
 	SetActorScale3D( (dir.Size()/OverlapComp->GetUnscaledSphereRadius()) * FVector(1, 1, 1));
 
 
 	// The item will disappear once it comes close to a certain distance
 	if (dir.Size() < m_thresholdToCollect)
 	{
-		m_bIsGetCollected = false;
+		m_bMovingToPlayer = false;
 		UInventoryComponent* playerInven = m_owner->GetInventoryComponent();
-		if (playerInven && playerInven->AddItem(ItemID, Amount))
+		if (playerInven && playerInven->AddItem(m_ItemID, m_Amount))
 		{
 			m_owner = nullptr;
 			Destroy();
@@ -115,12 +116,12 @@ void APickUpBase::RandomizeScale()
 
 void APickUpBase::SimulateFloatingEffect(float deltaTime)
 {
-	if (m_floatingEffectRange > 0) {
+	if (m_floatingEffectDistance > 0) {
 		FVector NewLoc = SuperMesh->RelativeLocation;
 
-		float deltaZ = (FMath::Sin(m_floatingEffectOffset * m_floatingEffectFrequency + deltaTime) - FMath::Sin(m_floatingEffectOffset * m_floatingEffectFrequency));
-		NewLoc.Z += deltaZ * m_floatingEffectRange;
-		m_floatingEffectOffset += deltaTime;
+		float deltaZ = (FMath::Sin(m_startTime * m_floatingEffectSpeed + deltaTime) - FMath::Sin(m_startTime * m_floatingEffectSpeed));
+		NewLoc.Z += deltaZ * m_floatingEffectDistance;
+		m_startTime += deltaTime;
 		SuperMesh->SetRelativeLocation(NewLoc);
 	}
 }
@@ -140,7 +141,7 @@ void APickUpBase::Tick(float DeltaTime)
 
 	SimulateFloatingEffect(DeltaTime);
 
-	if (BAbleToPickup && m_bIsGetCollected) {
+	if (m_bCanMoveToPlayer && m_bMovingToPlayer) {
 		GravitateTowardPlayer(DeltaTime);
 	}
 }

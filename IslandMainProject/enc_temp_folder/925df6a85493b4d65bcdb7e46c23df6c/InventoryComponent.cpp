@@ -147,7 +147,7 @@ void UInventoryComponent::ThrowItem(FName itemID, int amount)
 				APickUpBase* spawnActor = GetWorld()->SpawnActor<APickUpBase>(spawnedClass, GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 30.f, FRotator::ZeroRotator, spawnPara);
 
 				spawnActor->AddImpulseToOverlapComp((GetOwner()->GetActorForwardVector() + GetOwner()->GetActorUpVector()).GetSafeNormal(), 500.f);
-				spawnActor->Amount = ReduceItemAmount(itemID, amount);
+				spawnActor->m_Amount = ReduceItemAmount(itemID, amount);
 			
 			}
 	
