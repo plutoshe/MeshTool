@@ -7,7 +7,6 @@
 #include "Engine/Classes/Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
 #include "PickUpBase.generated.h"
-#include "VenturePawn.h"
 
 UCLASS()
 class ISLANDMAINPROJECT_API APickUpBase : public AActor
@@ -92,7 +91,7 @@ protected:
 
 private:
 
-	AVenturePawn* m_owner;
+	class AVenturePawn* m_owner;
 
 	FTimerHandle m_SpawnHandle;
 

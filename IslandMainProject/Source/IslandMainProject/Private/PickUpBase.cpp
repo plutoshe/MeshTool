@@ -18,11 +18,10 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToAllChannels(ECR_Block);
 	OverlapComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
-	//OverlapComp->SetSimulatePhysics(true);
-
-	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
-
 	OverlapComp->SetSphereRadius(PickupRadius);
+	OverlapComp->SetSimulatePhysics(false);
+	OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
 
 	RootComponent = OverlapComp;
 
@@ -42,19 +41,21 @@ APickUpBase::APickUpBase()
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
-		AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
-		if (characterBase && BAbleToPickup) {
-			// Move to character
-			m_owner = characterBase;
+		FString test = OtherComp->GetName();
+		if (OtherComp->GetName() == "CapsuleComponent")
+		{
+			AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
+			if (characterBase && BAbleToPickup)
+			{
+				// Move to character
+				m_owner = characterBase;
 
-			m_bIsGetCollected = true;
+				m_bIsGetCollected = true;
 
-			OverlapComp->SetSimulatePhysics(false);
-			OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-			SuperMesh->SetSimulatePhysics(false);
-			SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
-			SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+				SuperMesh->SetSimulatePhysics(false);
+				SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+				SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			}
 		}
 	}
 }
