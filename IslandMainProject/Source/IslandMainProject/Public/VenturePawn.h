@@ -70,7 +70,7 @@ protected:
 	class AAPToolBase* m_usingTool;
 	*/
 private:
-	/** Top down camera */
+	/** Camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* CameraComp;
 

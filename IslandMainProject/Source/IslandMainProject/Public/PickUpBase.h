@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/Classes/GameFramework/Actor.h"
 #include "GameFramework/Actor.h"
 #include "PickUpBase.generated.h"
 
@@ -21,7 +22,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FText m_Name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText m_Describtion;
+		FText m_Description;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		int m_Amount;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -67,23 +68,26 @@ protected:
 
 private:
 
-	class AVenturePawn* m_InsideCharacter;
+	class AVenturePawn* m_owner;
 	bool m_bMovingToPlayer;
 
 	float m_startTime;
-	UPROPERTY(EditDefaultsOnly)
-		float m_ThresholdToDestroy;
-	UPROPERTY(EditDefaultsOnly)
-		float m_floatDistance;
-	UPROPERTY(EditDefaultsOnly)
-		float m_floatSpeed;
 
+	// The max distance between a player and this item
+	float m_maxdistance;
 
-	UFUNCTION(BlueprintCallable, Category = "Utils")
-		void StartMoveToPlayer(AVenturePawn* m_InsideCharacter);
+	UPROPERTY(EditDefaultsOnly)
+		float m_thresholdToCollect;
+	UPROPERTY(EditDefaultsOnly)
+		float m_floatingEffectDistance;
+	UPROPERTY(EditDefaultsOnly)
+		float m_floatingEffectSpeed;
+
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+		void GravitateTowardPlayer(float deltaTime);
 
 	void RandomizeScale();
-	void SimulateFloat(float _deltaTime);
+	void SimulateFloatingEffect(float deltaTime);
 
 	class UStaticMesh* GetRandomMesh();
 

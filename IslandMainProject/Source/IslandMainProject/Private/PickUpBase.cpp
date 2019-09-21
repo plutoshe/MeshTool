@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Components/SphereComponent.h"
 #include "Public/VenturePawn.h"
+
 // Sets default values
 APickUpBase::APickUpBase()
 {
@@ -21,7 +22,7 @@ APickUpBase::APickUpBase()
 
 	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
 
-	OverlapComp->SetSphereRadius(96.f);
+	OverlapComp->SetSphereRadius(200.f);
 
 	RootComponent = OverlapComp;
 
@@ -33,9 +34,9 @@ APickUpBase::APickUpBase()
 	m_bCanMoveToPlayer = false;
 	m_timeAvoidPickUpAfterSpawn = 1.4f;
 
-	m_ThresholdToDestroy = 3;
-	m_floatDistance = 30;
-	m_floatSpeed = 8;
+	m_thresholdToCollect = 3;
+	m_floatingEffectDistance = 30;
+	m_floatingEffectSpeed = 3;
 }
 
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -44,8 +45,16 @@ void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* 
 		AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
 		if (characterBase && m_bCanMoveToPlayer) {
 			// Move to character
-			m_InsideCharacter = characterBase;
-			StartMoveToPlayer(characterBase);
+			m_owner = characterBase;
+
+			m_bMovingToPlayer = true;
+
+			OverlapComp->SetSimulatePhysics(false);
+			OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			SuperMesh->SetSimulatePhysics(false);
+			SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	}
 }
@@ -78,17 +87,24 @@ void APickUpBase::BeginPlay()
 
 }
 
-void APickUpBase::StartMoveToPlayer(AVenturePawn* m_InsideCharacter)
+void APickUpBase::GravitateTowardPlayer(float deltaTime)
 {
-	m_bMovingToPlayer = true;
+	FVector dir = m_owner->GetActorLocation() - GetActorLocation();
+	SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_MoveSpeed * deltaTime);
+	SetActorScale3D( (dir.Size()/OverlapComp->GetUnscaledSphereRadius()) * FVector(1, 1, 1));
 
-	OverlapComp->SetSimulatePhysics(false);
-	OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	SuperMesh->SetSimulatePhysics(false);
-	SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
-	SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	// The item will disappear once it comes close to a certain distance
+	if (dir.Size() < m_thresholdToCollect)
+	{
+		m_bMovingToPlayer = false;
+		UInventoryComponent* playerInven = m_owner->GetInventoryComponent();
+		if (playerInven && playerInven->AddItem(m_ItemID, m_Amount))
+		{
+			m_owner = nullptr;
+			Destroy();
+		}
+	}
 }
 
 void APickUpBase::RandomizeScale()
@@ -96,17 +112,16 @@ void APickUpBase::RandomizeScale()
 	float rnd = FMath::RandRange(0.9f, 1.3f);
 	SetActorScale3D(GetActorScale()*rnd);
 	SuperMesh->SetRelativeRotation(SuperMesh->RelativeRotation + FMath::VRand().Rotation());
-
 }
 
-void APickUpBase::SimulateFloat(float _deltaTime)
+void APickUpBase::SimulateFloatingEffect(float deltaTime)
 {
-	if (m_floatDistance > 0) {
+	if (m_floatingEffectDistance > 0) {
 		FVector NewLoc = SuperMesh->RelativeLocation;
 
-		float deltaZ = (FMath::Sin(m_startTime*m_floatSpeed + _deltaTime) - FMath::Sin(m_startTime*m_floatSpeed));
-		NewLoc.Z += deltaZ * m_floatDistance;
-		m_startTime += _deltaTime;
+		float deltaZ = (FMath::Sin(m_startTime * m_floatingEffectSpeed + deltaTime) - FMath::Sin(m_startTime * m_floatingEffectSpeed));
+		NewLoc.Z += deltaZ * m_floatingEffectDistance;
+		m_startTime += deltaTime;
 		SuperMesh->SetRelativeLocation(NewLoc);
 	}
 }
@@ -124,20 +139,10 @@ void APickUpBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	SimulateFloat(DeltaTime);
+	SimulateFloatingEffect(DeltaTime);
 
 	if (m_bCanMoveToPlayer && m_bMovingToPlayer) {
-		FVector dir = m_InsideCharacter->GetActorLocation() - GetActorLocation();
-		SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_MoveSpeed * DeltaTime);
-
-		if (dir.Size() < m_ThresholdToDestroy) {
-			m_bMovingToPlayer = false;
-			UInventoryComponent* playerInven = m_InsideCharacter->GetInventoryComponent();
-			if (playerInven && playerInven->AddItem(m_ItemID, m_Amount)) {
-				m_InsideCharacter = nullptr;
-				Destroy();
-			}
-		}
+		GravitateTowardPlayer(DeltaTime);
 	}
 }
 
