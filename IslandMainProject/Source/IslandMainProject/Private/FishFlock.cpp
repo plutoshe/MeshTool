@@ -12,17 +12,21 @@
 #include "ScopeLock.h"
 #include "Engine/StaticMesh.h"
 
-FVector checkMapRange(const FVector& mapMinSize, const FVector& mapMaxSize, const FVector& currentPosition, const FVector& currentVelocity)
+FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, const FVector& mapMaxSize, const FVector& currentPosition, const FVector& currentVelocity)
 {
 	FVector newVelocity = currentVelocity;
-	if (currentPosition.X > mapMaxSize.X || currentPosition.X < -mapMinSize.X) {
-		newVelocity.X *= -1.f;
+	
+	if (currentPosition.X > m_MainPoint.X + mapMaxSize.X && newVelocity.X > 0
+		|| currentPosition.X < m_MainPoint.X + mapMinSize.X && newVelocity.X < 0) {
+		newVelocity.X *= -1.0f;
 	}
-	if (currentPosition.Y > mapMaxSize.Y || currentPosition.Y < -mapMinSize.Y) {
-		newVelocity.Y *= -1.f;
+	if (currentPosition.Y > m_MainPoint.Y + mapMaxSize.Y && newVelocity.Y > 0
+		|| currentPosition.Y < m_MainPoint.Y + mapMinSize.Y && newVelocity.Y < 0) {
+		newVelocity.Y *= -1.0f;
 	}
 
-	if (currentPosition.Z > mapMaxSize.Z || currentPosition.Z < -mapMinSize.Z) {
+	if (currentPosition.Z > m_MainPoint.Z + mapMaxSize.Z && newVelocity.Z > 0 ||
+		currentPosition.Z < m_MainPoint.Z + mapMinSize.Z && newVelocity.Z < 0) {
 		newVelocity.Z *= -1.f;
 	}
 	return newVelocity;
@@ -64,7 +68,7 @@ void AFishFlock::OnConstruction(const FTransform& Transform)
 			FMath::RandRange(
 				m_mapMinSize.Z + (1 - m_spawningRange.Z) / 2 * (m_mapMaxSize.Z - m_mapMinSize.Z),
 				m_mapMaxSize.Z - (1 - m_spawningRange.Z) / 2 * (m_mapMaxSize.Z - m_mapMinSize.Z)));
-		FRotator randRotator(0, FMath::RandRange(0, 90), 0);
+		FRotator randRotator(0, FMath::RandRange(0, 360), 0);
 
 		FTransform t;
 		t.SetLocation(randomPos);
@@ -88,7 +92,7 @@ void AFishFlock::BeginPlay()
 		m_instancedStaticMeshComponent->GetInstanceTransform(i, transfromOfInitialFish);
 		stateCopy.instanceId = state.instanceId = i;
 		stateCopy.position = state.position = transfromOfInitialFish.GetLocation();
-		stateCopy.velocity = state.velocity = transfromOfInitialFish.GetRotation().Vector() * FMath::RandRange(100, 400);
+		stateCopy.velocity = state.velocity = transfromOfInitialFish.GetRotation().Vector() * FMath::RandRange(2000, 4000);
 		stateCopy.acceleration = state.acceleration = FVector::ZeroVector;
 		m_fishStates[i][m_currentStatesIndex] = state;
 		m_fishStates[i][m_previousStatesIndex] = stateCopy;
@@ -119,16 +123,16 @@ void AFishFlock::Calculate(FishState**& agents, float DeltaTime, bool isSingleTh
 	float rCohesion = m_radiusCohesion, rSeparation = m_radiusSeparation, rAlignment = m_radiusAlignment;
 	float maxAccel = m_maxAcceleration;
 	float maxVel = m_maxVelocity;
+	FVector mainPoint = m_MainPoint;
 	FVector mapSzMax = m_mapMaxSize;
 	FVector mapSzMin = m_mapMinSize;
 	const int32 fishNum = m_fishNum;
 
 	int currentStatesIndex = m_currentStatesIndex;
 	int previousStatesIndex = m_previousStatesIndex;
-//LogTemp: 0 acc : X = 27.487 Y = 76.088 Z = 7.785, speed : X = 117.139 Y = 121.371 Z = -2.611, position : X = -257.862 Y = -850.633 Z = 14.620
-	//LogTemp: 0 acc: X=49.830 Y=109.210 Z=7.291 , speed: X=-117.554 Y=-122.281 Z=2.551, position: X=-256.882 Y=-849.614 Z=14.599
+
 	ParallelFor(fishNum,
-		[&agents, fishNum, currentStatesIndex, previousStatesIndex, kCoh, kSep, kAlign, rCohesion, rSeparation, rAlignment, maxAccel, maxVel, mapSzMax, mapSzMin, DeltaTime, isSingleThread](int32 fishID)
+		[&agents, fishNum, mainPoint, currentStatesIndex, previousStatesIndex, kCoh, kSep, kAlign, rCohesion, rSeparation, rAlignment, maxAccel, maxVel, mapSzMax, mapSzMin, DeltaTime, isSingleThread](int32 fishID)
 		{
 			FVector cohesion(FVector::ZeroVector), separation(FVector::ZeroVector), alignment(FVector::ZeroVector);
 			int32 cohesionCnt = 0, separationCnt = 0, alignmentCnt = 0;
@@ -169,18 +173,23 @@ void AFishFlock::Calculate(FishState**& agents, float DeltaTime, bool isSingleTh
 				alignment.Normalize();
 			}
 
-			agents[fishID][currentStatesIndex].acceleration = (cohesion * kCoh + separation * kSep + alignment * kAlign).GetClampedToMaxSize(maxAccel);
-			UE_LOG(LogTemp, Log, TEXT("%d acc: %s , speed: %s, position: %s"), 
+			agents[fishID][currentStatesIndex].acceleration = (cohesion * kCoh + separation * kSep + 
+				alignment * kAlign 
+				//+ (FMath::RandRange(0, 30) > 5) * FRotator(0, FMath::RandRange(0, 360), 0).Quaternion().Vector() * FMath::RandRange(10000, 40000)
+				).GetClampedToMaxSize(maxAccel);
+			/*UE_LOG(LogTemp, Log, TEXT("%d %.2f %.2f acc: %s , speed: %s, position: %s"), 
 				fishID , 
+				maxAccel,
+				maxVel,
 				*(agents[fishID][currentStatesIndex].acceleration.ToString()), 
 				*(agents[fishID][currentStatesIndex].velocity.ToString()),
-				*(agents[fishID][currentStatesIndex].position.ToString()));
-			//agents[fishID][currentStatesIndex].acceleration.Z = 0;
+				*(agents[fishID][currentStatesIndex].position.ToString()));*/
+			agents[fishID][currentStatesIndex].acceleration.Z = 0;
 
 			agents[fishID][currentStatesIndex].velocity = agents[fishID][1 - currentStatesIndex].velocity + agents[fishID][currentStatesIndex].acceleration * DeltaTime;
-			agents[fishID][currentStatesIndex].velocity = agents[fishID][currentStatesIndex].velocity.GetClampedToMaxSize(maxVel);
+			agents[fishID][currentStatesIndex].velocity = agents[fishID][currentStatesIndex].velocity.GetClampedToMaxSize(maxAccel);
 			agents[fishID][currentStatesIndex].position = agents[fishID][1 - currentStatesIndex].position + agents[fishID][currentStatesIndex].velocity * DeltaTime;
-			agents[fishID][currentStatesIndex].velocity = checkMapRange(mapSzMin, mapSzMax, agents[fishID][currentStatesIndex].position, agents[fishID][currentStatesIndex].velocity);
+			agents[fishID][currentStatesIndex].velocity = checkMapRange(mainPoint, mapSzMin, mapSzMax, agents[fishID][currentStatesIndex].position, agents[fishID][currentStatesIndex].velocity);
 			}, isSingleThread);
 	
 	//for (int i = 0; i < fishNum; i++) {

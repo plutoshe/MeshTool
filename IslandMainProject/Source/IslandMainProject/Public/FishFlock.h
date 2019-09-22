@@ -54,6 +54,9 @@ public:
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UStaticMesh* m_staticMesh;
 
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		FVector m_MainPoint;
+
 protected:
 	void Calculate(FishState**& agents, float DeltaTime, bool isSingleThread);
 	bool collisionDetected(const FVector& start, const FVector& end, FHitResult& hitResult);
@@ -76,6 +79,6 @@ private:
 
 	// time elapsed from last calculation
 	float m_elapsedTime = 0.f;
-
+	
 	// Fish static mesh object
 };
