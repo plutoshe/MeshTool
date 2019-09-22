@@ -102,7 +102,7 @@ private:
 
 	class AVenturePawn* m_owner;
 
-	FTimerHandle m_SpawnHandle;
+	FTimerHandle m_spawnHandle;
 
 public:
 

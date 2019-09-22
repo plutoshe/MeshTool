@@ -4,6 +4,7 @@
 #include "ResouseSpawningServiceActor.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 #define WOODPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_WoodPickUp.BP_WoodPickUp'"
@@ -30,7 +31,7 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 	}
 }
 
-void AResouseSpawningServiceActor::SpawnResource()
+void AResouseSpawningServiceActor::SpawnResource(int resourceid)
 {
 		UWorld* world = GetWorld();
 		if (world)
@@ -42,27 +43,30 @@ void AResouseSpawningServiceActor::SpawnResource()
 
 			FVector spawnLocation = this->GetActorLocation();
 
-			APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[0], spawnLocation, rotator, spawnParams);
+			APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[resourceid], spawnLocation, rotator, spawnParams);
 		}
 
-		if (world)
-		{
-			FActorSpawnParameters spawnParams;
-			spawnParams.Owner = this;
+		//if (world)
+		//{
+		//	FActorSpawnParameters spawnParams;
+		//	spawnParams.Owner = this;
 
-			FRotator rotator;
+		//	FRotator rotator;
 
-			FVector spawnLocation = this->GetActorLocation();
+		//	FVector spawnLocation = this->GetActorLocation();
 
-			APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[1], spawnLocation, rotator, spawnParams);
-		}
+		//	APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[1], spawnLocation, rotator, spawnParams);
+		//}
 }
 
 // Called when the game starts or when spawned
 void AResouseSpawningServiceActor::BeginPlay()
 {
 	Super::BeginPlay();
-	SpawnResource();
+	//SpawnResource();
+
+	m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resourceID);
+	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
 }
 
 // Called every frame

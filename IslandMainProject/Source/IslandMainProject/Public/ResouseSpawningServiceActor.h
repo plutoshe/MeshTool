@@ -32,17 +32,18 @@ public:
 	//	UClass TQueue<TSubclassOf<APickUpBase>*> ResouseQueue;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void SpawnResource();
+		void SpawnResource(int resourceid);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class APickUpBase> ThisBlueprint;
-
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
+
+	int m_resourceID = 1;
+	FTimerDelegate m_timerDel;
+	FTimerHandle m_spawnTimeHandle;
 
 public:
 	// Called every frame

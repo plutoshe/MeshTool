@@ -83,7 +83,7 @@ void APickUpBase::BeginPlay()
 			SuperMesh->SetStaticMesh(rndMesh);
 	}
 
-	GetWorldTimerManager().SetTimer(m_SpawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
+	GetWorldTimerManager().SetTimer(m_spawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
 }
 
 void APickUpBase::GravitateTowardPlayer(float deltaTime)
