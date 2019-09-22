@@ -12,7 +12,9 @@
 APickUpBase::APickUpBase()
 {
 	CapusuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapusuleComponent"));
+	CapusuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CapusuleComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CapusuleComponent->SetSimulatePhysics(true);
 	RootComponent = CapusuleComponent;
 
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -24,7 +26,6 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
 	OverlapComp->SetSphereRadius(PickupRadius);
-	OverlapComp->SetSimulatePhysics(true);
 	OverlapComp->SetupAttachment(RootComponent);
 
 	SuperMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SuperMesh"));
