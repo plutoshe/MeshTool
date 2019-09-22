@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Containers/Queue.h"
+#include "Containers/Array.h"
 #include "PickUpBase.h"
 #include "ResouseSpawningServiceActor.generated.h"
 
@@ -24,9 +25,6 @@ public:
 	// Sets default values for this actor's properties
 	AResouseSpawningServiceActor();
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class APickUpBase> ThisBlueprint;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
@@ -39,6 +37,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<class APickUpBase> ThisBlueprint;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
 
 public:
 	// Called every frame
