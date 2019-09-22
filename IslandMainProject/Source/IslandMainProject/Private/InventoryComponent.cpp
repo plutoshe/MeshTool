@@ -185,13 +185,38 @@ bool UInventoryComponent::HasItem(FName itemID)
 	return false;
 }
 
-bool UInventoryComponent::HasEnoughItem(FName itemID, int amount)
+bool UInventoryComponent::HasEnoughItem(const FCostable& costable)
 {
+	auto costPairList = costable.RequireResourceList;
+	bool hasEnough = true;
+	for (auto it = costPairList.begin(); it != costPairList.end(); ++it)
+	{
+		bool foundItem = true;
+		bool enoughItem = true;
+		for (auto it2 = m_inventory.begin(); it2 != m_inventory.end(); ++it2)
+		{
+			if ((*it).ItemID == (*it2).ItemID) {
+				foundItem = true;
+				if ((*it).Amount <= (*it2).Value) {
+					enoughItem = true;
+				}
+				break;
+			}
+		}
+		hasEnough = foundItem && enoughItem;
+		if (!hasEnough) return false;
+	}
+	return hasEnough;
+}
+
+int UInventoryComponent::GetItemAmount(FName ItemID)
+{
+	int amount = 0;
 	for (auto it = m_inventory.begin(); it != m_inventory.end(); ++it)
 	{
-		if ((*it).ItemID.IsEqual(itemID) && (*it).Value >= amount) {
-			return true;
+		if ((*it).ItemID == ItemID) {
+			amount = (*it).Value;
 		}
 	}
-	return false;
+	return amount;
 }

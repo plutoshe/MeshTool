@@ -2,8 +2,8 @@
 
 
 #include "IslandMainProjectGameModeBase.h"
-
 #include "Public/VenturePawn.h"
+#include "Public/InventoryComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 	/* ----Useful HEAD
@@ -59,6 +59,65 @@ void AIslandMainProjectGameModeBase::SwitchToMode(EModeEnum mode)
 	default:
 		break;
 	}
+}
+
+bool AIslandMainProjectGameModeBase::CheckIfResourceEnouth(FName sourceID)
+{
+	if (!m_cachedVenturePawn) return false;
+	
+	UInventoryComponent* playerInventoryComp = m_cachedVenturePawn->GetInventoryComponent();
+	// Find the source ID
+	FCostable* thisCostable = m_buildingResourceDB->FindRow<FCostable>(sourceID, "");
+	if(thisCostable)
+	return playerInventoryComp->HasEnoughItem(*thisCostable);
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No data found in FCostable Data table"));
+	}
+	return false;
+}
+
+TArray<int> AIslandMainProjectGameModeBase::GetAmountsOfRequiredResource(FName sourceID)
+{
+	TArray<int> listOfAmount;
+	if (!m_cachedVenturePawn) return listOfAmount;
+
+	UInventoryComponent* playerInventoryComp = m_cachedVenturePawn->GetInventoryComponent();
+	// Find the source ID
+	FCostable* thisCostable = m_buildingResourceDB->FindRow<FCostable>(sourceID, "");
+	if (thisCostable) {
+		for (auto it = thisCostable->RequireResourceList.begin(); it != thisCostable->RequireResourceList.end(); ++it)
+		{
+			listOfAmount.Add(playerInventoryComp->GetItemAmount((*it).ItemID));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No data found in FCostable Data table"));
+	}
+	return listOfAmount;
+}
+
+bool AIslandMainProjectGameModeBase::CostResources(FName sourceID)
+{
+	if (!m_cachedVenturePawn) return false;
+
+	UInventoryComponent* playerInventoryComp = m_cachedVenturePawn->GetInventoryComponent();
+	// Find the source ID
+	FCostable* thisCostable = m_buildingResourceDB->FindRow<FCostable>(sourceID, "");
+	if (thisCostable) {
+		for (auto it = thisCostable->RequireResourceList.begin(); it != thisCostable->RequireResourceList.end(); ++it)
+		{
+			int removedAmount = playerInventoryComp->ReduceItemAmount((*it).ItemID, (*it).Amount);
+			if (removedAmount < (*it).Amount) UE_LOG(LogTemp, Warning, TEXT("Query Amount is more than the amout player has, didn't check call [CheckIfResourceEnouth(FName)] before to make sure there is enough item in player's inventory"));
+		}
+		return true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No data found in FCostable Data table"));
+	}
+	return false;
 }
 
 bool AIslandMainProjectGameModeBase::FindBuildingManager()
