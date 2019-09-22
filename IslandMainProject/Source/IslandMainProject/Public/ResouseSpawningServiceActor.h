@@ -29,6 +29,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
+	//There is a bug when you set UPROPERTY to it, so I turn it off
 	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
 		TQueue<TSubclassOf<APickUpBase>> ResouseQueue;
 

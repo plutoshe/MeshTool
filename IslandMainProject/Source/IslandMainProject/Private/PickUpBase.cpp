@@ -15,6 +15,7 @@ APickUpBase::APickUpBase()
 	CapusuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	CapusuleComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CapusuleComponent->SetSimulatePhysics(true);
+	CapusuleComponent->BodyInstance.bLockRotation = true;
 	RootComponent = CapusuleComponent;
 
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.

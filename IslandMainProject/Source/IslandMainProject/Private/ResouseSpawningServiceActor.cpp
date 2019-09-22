@@ -26,8 +26,6 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
 		}
 	}
-	ResouseQueue.Enqueue(PickUpBlueprints[0]);
-	ResouseQueue.Enqueue(PickUpBlueprints[0]);
 	{
 		static ConstructorHelpers::FObjectFinder<UBlueprint> APickUpBase(TEXT(FISHPICKUPPATH));
 		if (APickUpBase.Object)
@@ -35,6 +33,9 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
 		}
 	}
+
+	ResouseQueue.Enqueue(PickUpBlueprints[0]);
+	ResouseQueue.Enqueue(PickUpBlueprints[0]);
 	ResouseQueue.Enqueue(PickUpBlueprints[1]);
 }
 
@@ -52,6 +53,8 @@ void AResouseSpawningServiceActor::SpawnResource(TSubclassOf<class APickUpBase> 
 		UWorld* world = GetWorld();
 		if (world)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
+
 			FActorSpawnParameters spawnParams;
 			spawnParams.Owner = this;
 
@@ -85,8 +88,9 @@ void AResouseSpawningServiceActor::BeginPlay()
 	Super::BeginPlay();
 	//SpawnResource();
 
-	m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resouceObject);
-	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
+	//m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resouceObject);
+	//GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
+	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, this, &AResouseSpawningServiceActor::PopResouce, 5, false);
 }
 
 // Called every frame
