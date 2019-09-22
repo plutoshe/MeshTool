@@ -21,6 +21,8 @@ public:
 	AIslandMainProjectGameModeBase();
 
 	class UDataTable* GetItemDB() const { return m_InventoryItemDB; }
+	class UDataTable* GetBuildingResrouceDB() const { return m_buildingResourceDB; }
+
 	/* ----Useful HEAD
 	TArray<TSubclassOf<class AAPToolBase>> GetSpawnToolList() const { return m_ToolClassesToSpawn; }
 	*/
@@ -33,6 +35,8 @@ protected:
 		*/
 	UPROPERTY(EditDefaultsOnly, Category = "InventorySystem")
 		class UDataTable* m_InventoryItemDB;
+	UPROPERTY(EditDefaultsOnly, Category = "InventorySystem")
+		class UDataTable* m_buildingResourceDB;
 
 #pragma region BuildingSystem
 public:
@@ -45,6 +49,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "BuilidingSystem")
 		EModeEnum m_CurrentMode;
 
+	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
+		bool CheckIfResourceEnouth(FName sourceID);
+	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
+		TArray<int> GetAmountsOfRequiredResource(FName sourceID);
+	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
+		bool CostResources(FName sourceID);
 protected:
 	bool m_inBuildingMode;
 
