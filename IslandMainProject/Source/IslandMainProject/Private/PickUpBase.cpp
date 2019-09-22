@@ -20,8 +20,6 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
 	OverlapComp->SetSphereRadius(PickupRadius);
 	OverlapComp->SetSimulatePhysics(false);
-	OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
 
 	RootComponent = OverlapComp;
 
@@ -41,21 +39,17 @@ APickUpBase::APickUpBase()
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
-		FString test = OtherComp->GetName();
-		if (OtherComp->GetName() == "CapsuleComponent")
+		AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
+		if (characterBase && BAbleToPickup)
 		{
-			AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
-			if (characterBase && BAbleToPickup)
-			{
-				// Move to character
-				m_owner = characterBase;
+			// Move to character
+			m_owner = characterBase;
 
-				m_bIsGetCollected = true;
+			m_bIsGetCollected = true;
 
-				SuperMesh->SetSimulatePhysics(false);
-				SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
-				SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			}
+			SuperMesh->SetSimulatePhysics(false);
+			SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	}
 }
@@ -91,7 +85,9 @@ void APickUpBase::GravitateTowardPlayer(float deltaTime)
 {
 	FVector dir = m_owner->GetActorLocation() - GetActorLocation();
 	SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_floatingEffectSpeed * deltaTime);
-	SetActorScale3D( (dir.Size()/OverlapComp->GetUnscaledSphereRadius()) * FVector(1, 1, 1));
+	float scalepercentage = dir.Size() / OverlapComp->GetUnscaledSphereRadius();
+	if(scalepercentage <= 1)
+		SetActorScale3D(scalepercentage * FVector(1, 1, 1));
 
 
 	// The item will disappear once it comes close to a certain distance
