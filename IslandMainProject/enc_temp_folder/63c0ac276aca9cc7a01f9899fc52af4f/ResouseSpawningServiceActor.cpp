@@ -65,13 +65,8 @@ void AResouseSpawningServiceActor::SpawnResource(int resourceid)
 
 FVector AResouseSpawningServiceActor::GetRandomLocation()
 {
-	FVector area = SpawnArea->GetScaledBoxExtent();
-	float spawnx = FMath::RandRange(-1 * area.X, area.X);
-	float spawny = FMath::RandRange(-1 * area.Y, area.Y);
-
-	FVector spawnpoint = GetActorLocation() + FVector(spawnx, spawny, 0);
-
-	return spawnpoint;
+	
+	return FVector();
 }
 
 // Called when the game starts or when spawned

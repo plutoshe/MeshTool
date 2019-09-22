@@ -29,8 +29,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
-	UPROPERTY(VisibleAnywhere, BlueprintCallable)
-		TQueue<TSubclassOf<APickUpBase>> ResouseQueue;
+	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
+	//	UClass TQueue<TSubclassOf<APickUpBase>*> ResouseQueue;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		void SpawnResource(int resourceid);
