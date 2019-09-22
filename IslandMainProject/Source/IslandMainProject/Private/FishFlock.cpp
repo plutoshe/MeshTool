@@ -18,16 +18,16 @@ FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, con
 	
 	if (currentPosition.X > m_MainPoint.X + mapMaxSize.X && newVelocity.X > 0
 		|| currentPosition.X < m_MainPoint.X + mapMinSize.X && newVelocity.X < 0) {
-		newVelocity.X *= -1.0f;
+		newVelocity.X *= -0.1f;
 	}
 	if (currentPosition.Y > m_MainPoint.Y + mapMaxSize.Y && newVelocity.Y > 0
 		|| currentPosition.Y < m_MainPoint.Y + mapMinSize.Y && newVelocity.Y < 0) {
-		newVelocity.Y *= -1.0f;
+		newVelocity.Y *= -0.1f;
 	}
 
 	if (currentPosition.Z > m_MainPoint.Z + mapMaxSize.Z && newVelocity.Z > 0 ||
 		currentPosition.Z < m_MainPoint.Z + mapMinSize.Z && newVelocity.Z < 0) {
-		newVelocity.Z *= -1.f;
+		newVelocity.Z *= -0.1f;
 	}
 	return newVelocity;
 }
