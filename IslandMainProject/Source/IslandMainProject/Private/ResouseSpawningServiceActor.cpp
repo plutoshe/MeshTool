@@ -26,6 +26,8 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
 		}
 	}
+	ResouseQueue.Enqueue(PickUpBlueprints[0]);
+	ResouseQueue.Enqueue(PickUpBlueprints[0]);
 	{
 		static ConstructorHelpers::FObjectFinder<UBlueprint> APickUpBase(TEXT(FISHPICKUPPATH));
 		if (APickUpBase.Object)
@@ -33,10 +35,20 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
 		}
 	}
+	ResouseQueue.Enqueue(PickUpBlueprints[1]);
 }
 
-void AResouseSpawningServiceActor::SpawnResource(int resourceid)
+void AResouseSpawningServiceActor::PopResouce()
 {
+	TSubclassOf<class APickUpBase> pop;
+	ResouseQueue.Dequeue(pop);
+	SpawnResource(pop);
+}
+
+void AResouseSpawningServiceActor::SpawnResource(TSubclassOf<class APickUpBase> spawnresource)
+{
+	if (spawnresource)
+	{
 		UWorld* world = GetWorld();
 		if (world)
 		{
@@ -47,20 +59,13 @@ void AResouseSpawningServiceActor::SpawnResource(int resourceid)
 
 			FVector spawnLocation = this->GetActorLocation();
 
-			APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[resourceid], GetRandomLocation(), rotator, spawnParams);
+			APickUpBase* test = world->SpawnActor<APickUpBase>(spawnresource, GetRandomLocation(), rotator, spawnParams);
 		}
-
-		//if (world)
-		//{
-		//	FActorSpawnParameters spawnParams;
-		//	spawnParams.Owner = this;
-
-		//	FRotator rotator;
-
-		//	FVector spawnLocation = this->GetActorLocation();
-
-		//	APickUpBase * test = world->SpawnActor<APickUpBase>(PickUpBlueprints[1], spawnLocation, rotator, spawnParams);
-		//}
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("There is no item to spawn from spawning service actor"));
+	}
 }
 
 FVector AResouseSpawningServiceActor::GetRandomLocation()
@@ -80,7 +85,7 @@ void AResouseSpawningServiceActor::BeginPlay()
 	Super::BeginPlay();
 	//SpawnResource();
 
-	m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resourceID);
+	m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resouceObject);
 	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
 }
 

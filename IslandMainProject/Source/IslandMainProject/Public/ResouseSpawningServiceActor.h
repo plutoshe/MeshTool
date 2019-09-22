@@ -29,11 +29,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
-	UPROPERTY(VisibleAnywhere, BlueprintCallable)
+	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
 		TQueue<TSubclassOf<APickUpBase>> ResouseQueue;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void SpawnResource(int resourceid);
+		void PopResouce();
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		void SpawnResource(TSubclassOf<class APickUpBase> spawnresouce);
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		FVector GetRandomLocation();
@@ -51,7 +54,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
 
-	int m_resourceID = 1;
+	TSubclassOf<class APickUpBase> m_resouceObject;
 	FTimerDelegate m_timerDel;
 	FTimerHandle m_spawnTimeHandle;
 
