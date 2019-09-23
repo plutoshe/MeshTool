@@ -8,41 +8,44 @@
 #include "Containers/Array.h"
 #include "Components/BoxComponent.h"
 #include "PickUpBase.h"
-#include "ResouseSpawningServiceActor.generated.h"
+#include "ObjectSpawnServiceActor.generated.h"
 
-UENUM(BlueprintType)
-enum class SpawnMode : uint8
-{
-	Auto UMETA(DisplayName = "AutoSpawning"),
-	Manual UMETA(DisplayName = "ManualSpawning")
-};
+//UENUM(BlueprintType)
+//enum class SpawnMode : uint8
+//{
+//	Auto UMETA(DisplayName = "AutoSpawning"),
+//	Manual UMETA(DisplayName = "ManualSpawning")
+//};
 
 UCLASS()
-class ISLANDMAINPROJECT_API AResouseSpawningServiceActor : public AActor
+class ISLANDMAINPROJECT_API AObjectSpawnServiceActor : public AActor
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this actor's properties
-	AResouseSpawningServiceActor();
+	AObjectSpawnServiceActor();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
 	//There is a bug when you set UPROPERTY to it, so I turn it off
 	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
-		TQueue<TSubclassOf<APickUpBase>> ResouseQueue;
+	TQueue<TSubclassOf<APickUpBase>> ResourceQueue;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void PopResouce();
+		void PopResource();
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void SpawnResource(TSubclassOf<class APickUpBase> spawnresouce);
+		void SpawnResource(TSubclassOf<class APickUpBase> spawnResource);
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		FVector GetRandomLocation();
 
-	FORCEINLINE class UBoxComponent* GetSpawnArea() const { return SpawnArea; }
+	FORCEINLINE class UBoxComponent* GetSpawnArea() const
+	{
+		return SpawnArea;
+	}
 
 protected:
 
@@ -55,7 +58,7 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
 
-	TSubclassOf<class APickUpBase> m_resouceObject;
+	TSubclassOf<class APickUpBase> m_ResourceObject;
 	FTimerDelegate m_timerDel;
 	FTimerHandle m_spawnTimeHandle;
 

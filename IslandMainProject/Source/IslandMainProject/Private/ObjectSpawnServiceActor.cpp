@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ResouseSpawningServiceActor.h"
+#include "ObjectSpawnServiceActor.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "TimerManager.h"
@@ -11,12 +11,12 @@
 #define FISHPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_FishPickUp.BP_FishPickUp'"
 
 // Sets default values
-AResouseSpawningServiceActor::AResouseSpawningServiceActor()
+AObjectSpawnServiceActor::AObjectSpawnServiceActor()
 {
 	SpawnArea = CreateDefaultSubobject<UBoxComponent>(TEXT("SpawnArea"));
 	SpawnArea->SetSimulatePhysics(false);
 	SpawnArea->SetupAttachment(RootComponent);
-	
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	{
@@ -34,19 +34,19 @@ AResouseSpawningServiceActor::AResouseSpawningServiceActor()
 		}
 	}
 
-	ResouseQueue.Enqueue(PickUpBlueprints[0]);
-	ResouseQueue.Enqueue(PickUpBlueprints[0]);
-	ResouseQueue.Enqueue(PickUpBlueprints[1]);
+	ResourceQueue.Enqueue(PickUpBlueprints[0]);
+	ResourceQueue.Enqueue(PickUpBlueprints[0]);
+	ResourceQueue.Enqueue(PickUpBlueprints[1]);
 }
 
-void AResouseSpawningServiceActor::PopResouce()
+void AObjectSpawnServiceActor::PopResource()
 {
 	TSubclassOf<class APickUpBase> pop;
-	ResouseQueue.Dequeue(pop);
+	ResourceQueue.Dequeue(pop);
 	SpawnResource(pop);
 }
 
-void AResouseSpawningServiceActor::SpawnResource(TSubclassOf<class APickUpBase> spawnresource)
+void AObjectSpawnServiceActor::SpawnResource(TSubclassOf<class APickUpBase> spawnresource)
 {
 	if (spawnresource)
 	{
@@ -71,7 +71,7 @@ void AResouseSpawningServiceActor::SpawnResource(TSubclassOf<class APickUpBase> 
 	}
 }
 
-FVector AResouseSpawningServiceActor::GetRandomLocation()
+FVector AObjectSpawnServiceActor::GetRandomLocation()
 {
 	FVector area = SpawnArea->GetScaledBoxExtent();
 	float spawnx = FMath::RandRange(-1 * area.X, area.X);
@@ -83,18 +83,18 @@ FVector AResouseSpawningServiceActor::GetRandomLocation()
 }
 
 // Called when the game starts or when spawned
-void AResouseSpawningServiceActor::BeginPlay()
+void AObjectSpawnServiceActor::BeginPlay()
 {
 	Super::BeginPlay();
 	//SpawnResource();
 
 	//m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resouceObject);
 	//GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
-	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, this, &AResouseSpawningServiceActor::PopResouce, 5, false);
+	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, this, &AObjectSpawnServiceActor::PopResource, 5, false);
 }
 
 // Called every frame
-void AResouseSpawningServiceActor::Tick(float DeltaTime)
+void AObjectSpawnServiceActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
