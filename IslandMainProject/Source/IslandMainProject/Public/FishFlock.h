@@ -11,6 +11,7 @@ struct FishState {
 	FVector position;
 	FVector velocity;
 	FVector acceleration;
+	FVector beyondVelocity;
 };
 
 UCLASS()

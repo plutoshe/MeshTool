@@ -12,15 +12,40 @@
 #include "ScopeLock.h"
 #include "Engine/StaticMesh.h"
 
-FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, const FVector& mapMaxSize, const FVector& currentPosition, const FVector& currentVelocity)
+FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, const FVector& mapMaxSize, const FVector& currentPosition, const FVector& currentVelocity, FVector& currentBeyondVelocity)
 {
 	FVector newVelocity = currentVelocity;
-	
-	if (currentPosition.X > m_MainPoint.X + mapMaxSize.X && newVelocity.X > 0
-		|| currentPosition.X < m_MainPoint.X + mapMinSize.X && newVelocity.X < 0) {
-		newVelocity.X *= -0.1f;
+	for (int i = 0; i < 3; i++)
+	{
+		if (currentPosition[i] > m_MainPoint[i] + mapMaxSize[i] ||
+			currentPosition[i] < m_MainPoint[i] + mapMinSize[i])
+		{
+			if (currentBeyondVelocity[i] == 0)
+			{
+				currentBeyondVelocity[i] = currentVelocity[i] / FMath::RandRange(20, 40);
+				int ruledOutAxis = FMath::RandRange(0, 1);
+				int selectDir = FMath::RandRange(-1, 1);
+				ruledOutAxis += (ruledOutAxis >= i);
+				currentBeyondVelocity[3 - i - ruledOutAxis] += currentBeyondVelocity[i] * selectDir / FMath::RandRange(10, 20);
+			}
+
+		}
+		/*else if (currentPosition[i] < m_MainPoint[i] + mapMinSize[i] && newVelocity[i] < 0)
+		{
+			newVelocity[i] += 100.f;
+		}*/
+		else
+		{
+			currentBeyondVelocity[i] = 0;
+		}
 	}
-	if (currentPosition.Y > m_MainPoint.Y + mapMaxSize.Y && newVelocity.Y > 0
+	for (int i = 0; i < 3; i++)
+	{
+		newVelocity[i] -= currentBeyondVelocity[i];
+	}
+	
+	
+	/*if (currentPosition.Y > m_MainPoint.Y + mapMaxSize.Y && newVelocity.Y > 0
 		|| currentPosition.Y < m_MainPoint.Y + mapMinSize.Y && newVelocity.Y < 0) {
 		newVelocity.Y *= -0.1f;
 	}
@@ -28,7 +53,7 @@ FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, con
 	if (currentPosition.Z > m_MainPoint.Z + mapMaxSize.Z && newVelocity.Z > 0 ||
 		currentPosition.Z < m_MainPoint.Z + mapMinSize.Z && newVelocity.Z < 0) {
 		newVelocity.Z *= -0.1f;
-	}
+	}*/
 	return newVelocity;
 }
 
@@ -40,6 +65,7 @@ AFishFlock::AFishFlock()
 	PrimaryActorTick.bCanEverTick = true;
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshOb(TEXT("StaticMesh'/Game/Characters/NPC/seaBass.seaBass'"));
 	m_staticMesh = StaticMeshOb.Object;
+	UE_LOG(LogTemp, Log, TEXT("%.2f %.2f %.2f"), m_mapMaxSize[0], m_mapMaxSize[1], m_mapMaxSize[2]);
 
 }
 
@@ -189,7 +215,8 @@ void AFishFlock::Calculate(FishState**& agents, float DeltaTime, bool isSingleTh
 			agents[fishID][currentStatesIndex].velocity = agents[fishID][1 - currentStatesIndex].velocity + agents[fishID][currentStatesIndex].acceleration * DeltaTime;
 			agents[fishID][currentStatesIndex].velocity = agents[fishID][currentStatesIndex].velocity.GetClampedToMaxSize(maxAccel);
 			agents[fishID][currentStatesIndex].position = agents[fishID][1 - currentStatesIndex].position + agents[fishID][currentStatesIndex].velocity * DeltaTime;
-			agents[fishID][currentStatesIndex].velocity = checkMapRange(mainPoint, mapSzMin, mapSzMax, agents[fishID][currentStatesIndex].position, agents[fishID][currentStatesIndex].velocity);
+			agents[fishID][currentStatesIndex].beyondVelocity = agents[fishID][1 - currentStatesIndex].beyondVelocity;
+			agents[fishID][currentStatesIndex].velocity = checkMapRange(mainPoint, mapSzMin, mapSzMax, agents[fishID][currentStatesIndex].position, agents[fishID][currentStatesIndex].velocity, agents[fishID][currentStatesIndex].beyondVelocity);
 			}, isSingleThread);
 	
 	//for (int i = 0; i < fishNum; i++) {
