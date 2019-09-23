@@ -7,9 +7,20 @@
 #include "TimerManager.h"
 #include "Components/SphereComponent.h"
 #include "Public/VenturePawn.h"
+
 // Sets default values
 APickUpBase::APickUpBase()
 {
+	CapusuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapusuleComponent"));
+	CapusuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CapusuleComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CapusuleComponent->SetSimulatePhysics(true);
+	CapusuleComponent->GetBodyInstance()->bLockXRotation = true;
+	CapusuleComponent->GetBodyInstance()->bLockYRotation = true;
+	CapusuleComponent->GetBodyInstance()->bLockZRotation = true;
+	CapusuleComponent->GetBodyInstance()->bLockRotation = true;
+	RootComponent = CapusuleComponent;
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	OverlapComp = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapComp"));
@@ -17,42 +28,44 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToAllChannels(ECR_Block);
 	OverlapComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
-	OverlapComp->SetSimulatePhysics(true);
-
-	OverlapComp->OnComponentBeginOverlap.AddDynamic(this, &APickUpBase::OnPawnEnter);
-
-	OverlapComp->SetSphereRadius(96.f);
-
-	RootComponent = OverlapComp;
+	OverlapComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
+	OverlapComp->SetSphereRadius(PickupRadius);
+	OverlapComp->SetupAttachment(RootComponent);
 
 	SuperMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SuperMesh"));
 	SuperMesh->SetupAttachment(RootComponent);
 	SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	m_MoveSpeed = 700.f;
-	m_bCanMoveToPlayer = false;
-	m_timeAvoidPickUpAfterSpawn = 1.4f;
+	m_floatingEffectSpeed = 700.f;
+	BAbleToPickup = false;
+	RespawnTime = 1.4f;
 
-	m_ThresholdToDestroy = 3;
-	m_floatDistance = 30;
-	m_floatSpeed = 8;
+	m_thresholdToCollect = 3;
+	m_floatingEffectRange = 30;
+	m_floatingEffectFrequency = 3;
 }
 
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
 		AVenturePawn* characterBase = Cast<AVenturePawn>(OtherActor);
-		if (characterBase && m_bCanMoveToPlayer) {
+		if (characterBase && BAbleToPickup)
+		{
 			// Move to character
-			m_InsideCharacter = characterBase;
-			StartMoveToPlayer(characterBase);
+			m_owner = characterBase;
+
+			m_bIsGetCollected = true;
+
+			SuperMesh->SetSimulatePhysics(false);
+			SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	}
 }
 
-void APickUpBase::AllowToPickUp()
+void APickUpBase::AbleToPickUp()
 {
-	m_bCanMoveToPlayer = true;
+	BAbleToPickup = true;
 
 }
 
@@ -66,29 +79,37 @@ void APickUpBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	m_startTime = FMath::RandRange(5, 20);
-	if (m_bRandomizeScaleOnSpawn) {
+	m_floatingEffectOffset = FMath::RandRange(5, 20);
+	if (RandomizeScaleOnSpawn) {
 		RandomizeScale();
 		UStaticMesh* rndMesh = GetRandomMesh();
 		if (rndMesh)
 			SuperMesh->SetStaticMesh(rndMesh);
 	}
 
-	GetWorldTimerManager().SetTimer(m_SpawnHandle, this, &APickUpBase::AllowToPickUp, m_timeAvoidPickUpAfterSpawn, false);
-
+	GetWorldTimerManager().SetTimer(m_spawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
 }
 
-void APickUpBase::StartMoveToPlayer(AVenturePawn* m_InsideCharacter)
+void APickUpBase::GravitateTowardPlayer(float deltaTime)
 {
-	m_bMovingToPlayer = true;
+	FVector dir = m_owner->GetActorLocation() - GetActorLocation();
+	SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_floatingEffectSpeed * deltaTime);
+	float scalepercentage = dir.Size() / OverlapComp->GetUnscaledSphereRadius();
+	if(scalepercentage <= 1)
+		SetActorScale3D(scalepercentage * FVector(1, 1, 1));
 
-	OverlapComp->SetSimulatePhysics(false);
-	OverlapComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	SuperMesh->SetSimulatePhysics(false);
-	SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
-	SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+	// The item will disappear once it comes close to a certain distance
+	if (dir.Size() < m_thresholdToCollect)
+	{
+		m_bIsGetCollected = false;
+		UInventoryComponent* playerInven = m_owner->GetInventoryComponent();
+		if (playerInven && playerInven->AddItem(ItemID, Amount))
+		{
+			m_owner = nullptr;
+			Destroy();
+		}
+	}
 }
 
 void APickUpBase::RandomizeScale()
@@ -96,17 +117,16 @@ void APickUpBase::RandomizeScale()
 	float rnd = FMath::RandRange(0.9f, 1.3f);
 	SetActorScale3D(GetActorScale()*rnd);
 	SuperMesh->SetRelativeRotation(SuperMesh->RelativeRotation + FMath::VRand().Rotation());
-
 }
 
-void APickUpBase::SimulateFloat(float _deltaTime)
+void APickUpBase::SimulateFloatingEffect(float deltaTime)
 {
-	if (m_floatDistance > 0) {
+	if (m_floatingEffectRange > 0) {
 		FVector NewLoc = SuperMesh->RelativeLocation;
 
-		float deltaZ = (FMath::Sin(m_startTime*m_floatSpeed + _deltaTime) - FMath::Sin(m_startTime*m_floatSpeed));
-		NewLoc.Z += deltaZ * m_floatDistance;
-		m_startTime += _deltaTime;
+		float deltaZ = (FMath::Sin(m_floatingEffectOffset * m_floatingEffectFrequency + deltaTime) - FMath::Sin(m_floatingEffectOffset * m_floatingEffectFrequency));
+		NewLoc.Z += deltaZ * m_floatingEffectRange;
+		m_floatingEffectOffset += deltaTime;
 		SuperMesh->SetRelativeLocation(NewLoc);
 	}
 }
@@ -124,20 +144,10 @@ void APickUpBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	SimulateFloat(DeltaTime);
+	SimulateFloatingEffect(DeltaTime);
 
-	if (m_bCanMoveToPlayer && m_bMovingToPlayer) {
-		FVector dir = m_InsideCharacter->GetActorLocation() - GetActorLocation();
-		SetActorLocation(GetActorLocation() + dir.GetSafeNormal() * m_MoveSpeed * DeltaTime);
-
-		if (dir.Size() < m_ThresholdToDestroy) {
-			m_bMovingToPlayer = false;
-			UInventoryComponent* playerInven = m_InsideCharacter->GetInventoryComponent();
-			if (playerInven && playerInven->AddItem(m_ItemID, m_Amount)) {
-				m_InsideCharacter = nullptr;
-				Destroy();
-			}
-		}
+	if (BAbleToPickup && m_bIsGetCollected) {
+		GravitateTowardPlayer(DeltaTime);
 	}
 }
 

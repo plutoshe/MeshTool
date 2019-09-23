@@ -3,7 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/Classes/GameFramework/Actor.h"
+#include "Engine/Classes/Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
+#include "Components/CapsuleComponent.h"
 #include "PickUpBase.generated.h"
 
 UCLASS()
@@ -15,80 +18,96 @@ public:
 	// Sets default values for this actor's properties
 	APickUpBase();
 
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FName m_ItemID;
+		FName ItemID;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText m_Name;
+		FText Name;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText m_Describtion;
+		FText Description;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int m_Amount;
+		int Amount;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool m_bCanBeUsed;
+		bool BCanBeUsed;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float PickupRadius = 200.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		float RespawnTime;
 
 	FORCEINLINE class UStaticMeshComponent* GetStaticMesh() const { return SuperMesh; }
 
+	FORCEINLINE class USphereComponent* GetSphereComponent() const { return OverlapComp; }
+
+	FORCEINLINE class UCapsuleComponent* GetRootCompoennt() const { return CapusuleComponent; }
+
 protected:
+
+	// Root Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* CapusuleComponent;
 
 	// Overlap Function for going to player
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent* OverlapComp;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 		class UStaticMeshComponent* SuperMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category = Component)
 		TArray<class UStaticMesh*> m_RandomMeshList;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+		bool BAbleToPickup;
+
+	// The pick up is get collected right now
+	bool m_bIsGetCollected;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+		bool RandomizeScaleOnSpawn;
+
 	UFUNCTION()
 		void OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
-#pragma region SpawnFunctions
-protected:
-	FTimerHandle m_SpawnHandle;
-	float m_timeAvoidPickUpAfterSpawn;
-	void AllowToPickUp();
+	UFUNCTION()
+		void GravitateTowardPlayer(float deltaTime);
 
-public:
-	void AddImpulseToOverlapComp(const FVector _dir, float _magnitute);
+	UFUNCTION()
+		void RandomizeScale();
 
-#pragma endregion
-protected:
+	UFUNCTION()
+		UStaticMesh* GetRandomMesh();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool m_bCanMoveToPlayer;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-		float m_MoveSpeed;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
-		bool m_bRandomizeScaleOnSpawn;
+	UFUNCTION()
+		void AbleToPickUp();
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+#pragma region FloatingEffect
+
+	// The timing offset for floating effect
+	float m_floatingEffectOffset;
+	// The thresh hold for getting picked up
+	float m_thresholdToCollect;
+	
+	float m_floatingEffectRange;
+
+	float m_floatingEffectSpeed;
+
+	float m_floatingEffectFrequency;
+
+	void SimulateFloatingEffect(float deltaTime);
+#pragma endregion
+
 private:
 
-	class AVenturePawn* m_InsideCharacter;
-	bool m_bMovingToPlayer;
+	class AVenturePawn* m_owner;
 
-	float m_startTime;
-	UPROPERTY(EditDefaultsOnly)
-		float m_ThresholdToDestroy;
-	UPROPERTY(EditDefaultsOnly)
-		float m_floatDistance;
-	UPROPERTY(EditDefaultsOnly)
-		float m_floatSpeed;
-
-
-	UFUNCTION(BlueprintCallable, Category = "Utils")
-		void StartMoveToPlayer(AVenturePawn* m_InsideCharacter);
-
-	void RandomizeScale();
-	void SimulateFloat(float _deltaTime);
-
-	class UStaticMesh* GetRandomMesh();
+	FTimerHandle m_spawnHandle;
 
 public:
-	// Called every frame
+
+	void AddImpulseToOverlapComp(const FVector _dir, float _magnitute);
+
 	virtual void Tick(float DeltaTime) override;
 
 };

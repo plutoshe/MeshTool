@@ -4,57 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Engine/DataTable.h"
+#include "Public/StaticLibrary.h"
 #include "InventoryComponent.generated.h"
-
-USTRUCT(BlueprintType)
-struct FInventoryItem : public FTableRowBase {
-
-	GENERATED_BODY()
-
-public:
-	FInventoryItem() {
-		Name = FText::FromString("Item");
-		Action = FText::FromString("Use");
-		Describtion = FText::FromString("Add Description");
-		Value = 0;
-	}
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FName ItemID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		TSubclassOf<class APickUpBase> ItemPickUp;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText Name;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText Action;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32  Value;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		class UTexture2D* Thumbnail;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		FText Describtion;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bCanBeUsed;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		bool bCanStack;
-
-	void ClearItem() {
-		ItemID = FName(TEXT("None"));
-		Name = FText::FromString("Item");
-		Action = FText::FromString("Use");
-		Describtion = FText::FromString("Add Description");
-		Thumbnail = nullptr;
-		Value = 0;
-	}
-	bool IsNone() { return ItemID.IsEqual(FName(TEXT("None"))); }
-
-	bool operator==(const FInventoryItem& other) const {
-		return ItemID == other.ItemID;
-	}
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUpdateHUD);
 
@@ -84,17 +35,22 @@ public:
 		void TransformItemTo(UInventoryComponent* Other);
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void ClearAllItems();
-
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
+#pragma region Query
+	UFUNCTION(BlueprintCallable, Category = "InventoryQuery")
 		bool HasItem(FName itemID);
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
-		bool HasEnoughItem(FName itemID, int amount);
+	UFUNCTION(BlueprintCallable, Category = "InventoryQuery")
+		bool HasEnoughItem(const FCostable& costable);
+	UFUNCTION(BlueprintCallable, Category = "InventoryQuery")
+		int GetItemAmount(FName ItemID);
 
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	UFUNCTION(BlueprintCallable, Category = "InventoryQuery")
 		FORCEINLINE TArray<FInventoryItem>& GetInventory() { return m_inventory; }
 
-	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	UFUNCTION(BlueprintCallable, Category = "InventoryQuery")
 		FORCEINLINE int GetNumOfSlots() { return m_slotCount; }
+#pragma endregion
+
+
 	void LoadInventoryData();
 
 	UPROPERTY(BlueprintAssignable, meta = (DisplayName = "OnUpdateHUD"))
