@@ -11,6 +11,13 @@
 // Sets default values
 APickUpBase::APickUpBase()
 {
+	CapusuleComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapusuleComponent"));
+	CapusuleComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	CapusuleComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CapusuleComponent->SetSimulatePhysics(true);
+	CapusuleComponent->BodyInstance.bLockRotation = true;
+	RootComponent = CapusuleComponent;
+
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	OverlapComp = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapComp"));
@@ -18,10 +25,9 @@ APickUpBase::APickUpBase()
 	OverlapComp->SetCollisionResponseToAllChannels(ECR_Block);
 	OverlapComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	OverlapComp->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Overlap);
+	OverlapComp->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Ignore);
 	OverlapComp->SetSphereRadius(PickupRadius);
-	OverlapComp->SetSimulatePhysics(false);
-
-	RootComponent = OverlapComp;
+	OverlapComp->SetupAttachment(RootComponent);
 
 	SuperMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SuperMesh"));
 	SuperMesh->SetupAttachment(RootComponent);
@@ -78,7 +84,7 @@ void APickUpBase::BeginPlay()
 			SuperMesh->SetStaticMesh(rndMesh);
 	}
 
-	GetWorldTimerManager().SetTimer(m_SpawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
+	GetWorldTimerManager().SetTimer(m_spawnHandle, this, &APickUpBase::AbleToPickUp, RespawnTime, false);
 }
 
 void APickUpBase::GravitateTowardPlayer(float deltaTime)

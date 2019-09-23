@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Containers/Queue.h"
+#include "Containers/Array.h"
+#include "Components/BoxComponent.h"
 #include "PickUpBase.h"
 #include "ResouseSpawningServiceActor.generated.h"
 
@@ -24,21 +26,38 @@ public:
 	// Sets default values for this actor's properties
 	AResouseSpawningServiceActor();
 
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class APickUpBase> ThisBlueprint;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
+	//There is a bug when you set UPROPERTY to it, so I turn it off
 	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
-	//	UClass TQueue<TSubclassOf<APickUpBase>*> ResouseQueue;
+		TQueue<TSubclassOf<APickUpBase>> ResouseQueue;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void SpawnResource();
+		void PopResouce();
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		void SpawnResource(TSubclassOf<class APickUpBase> spawnresouce);
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		FVector GetRandomLocation();
+
+	FORCEINLINE class UBoxComponent* GetSpawnArea() const { return SpawnArea; }
 
 protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Component, meta = (AllowPrivateAccess = "true"))
+		class UBoxComponent* SpawnArea;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
+
+	TSubclassOf<class APickUpBase> m_resouceObject;
+	FTimerDelegate m_timerDel;
+	FTimerHandle m_spawnTimeHandle;
 
 public:
 	// Called every frame

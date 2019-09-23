@@ -6,6 +6,7 @@
 #include "Engine/Classes/GameFramework/Actor.h"
 #include "Engine/Classes/Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
+#include "Components/CapsuleComponent.h"
 #include "PickUpBase.generated.h"
 
 UCLASS()
@@ -34,7 +35,15 @@ public:
 
 	FORCEINLINE class UStaticMeshComponent* GetStaticMesh() const { return SuperMesh; }
 
+	FORCEINLINE class USphereComponent* GetSphereComponent() const { return OverlapComp; }
+
+	FORCEINLINE class UCapsuleComponent* GetRootCompoennt() const { return CapusuleComponent; }
+
 protected:
+
+	// Root Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+		class UCapsuleComponent* CapusuleComponent;
 
 	// Overlap Function for going to player
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
@@ -93,7 +102,7 @@ private:
 
 	class AVenturePawn* m_owner;
 
-	FTimerHandle m_SpawnHandle;
+	FTimerHandle m_spawnHandle;
 
 public:
 
