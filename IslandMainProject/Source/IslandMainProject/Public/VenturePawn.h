@@ -23,8 +23,6 @@ public:
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return CameraComp; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns CursorToWorld subobject **/
-	FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
 
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() { return InventoryComp; }
 
@@ -40,6 +38,12 @@ protected:
 	void Crouch();
 	void UnCrouch();
 	void OnMouseClick();
+	void OnMouseHold();
+	void OnMouseRelease();
+
+	void SwitchToItem1();
+	void SwitchToItem2();
+
 #pragma endregion
 
 	void SetNewMoveDestination(const FHitResult& outHit);
@@ -54,7 +58,6 @@ protected:
 	class UPathFollowingComponent* InitNavigationControl(AController& Controller);
 
 #pragma region Interactable
-	void OnInteract();
 	class AInteractableBase* m_currentInteractable;
 	UFUNCTION()
 		void OnInteractableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
@@ -62,10 +65,25 @@ protected:
 		void OnInteractableLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 #pragma endregion
 
+#pragma region Tools
+
+protected:
+	class AToolMover* m_toolMover;
+	UPROPERTY(EditDefaultsOnly, Category = Tool)
+		TSubclassOf<class AToolMover> ToolMoverClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = Tool)
+	FVector MoverRelativeLocation;
+	UPROPERTY(EditDefaultsOnly, Category = Tool)
+	FRotator MoverRelativeRotatoin;
+
+	bool m_OnMouseHold;
+
+	void SpawnMover();
+	void UpdateMoverTransformation();
+#pragma endregion
 
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
-		class UInventoryComponent* InventoryComp;
 	/* ----Useful HEAD
 	class AAPToolBase* m_usingTool;
 	*/
@@ -78,15 +96,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class USpringArmComponent* CameraBoom;
 
-	/** A decal that projects to the cursor location. */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
-		class UDecalComponent* CursorToWorld;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 		class USphereComponent* InteractPointComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
 		class UCameraControlComponent* CameraControlComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+		class UInventoryComponent* InventoryComp;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
