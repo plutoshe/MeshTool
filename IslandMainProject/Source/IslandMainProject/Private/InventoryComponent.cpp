@@ -72,7 +72,8 @@ bool UInventoryComponent::AddItem(FName itemID, int amount)
 				FInventoryItem newItem(*ItemToAdd);
 				newItem.Value = amount;
 				UE_LOG(LogTemp, Log, TEXT("New Item: %s, Amount: %d"), *newItem.ItemID.ToString(), amount);
-				bool bNoneBefore;
+
+				bool bNoneBefore = false;
 				for (auto it = m_inventory.begin(); it != m_inventory.end(); ++it)
 				{
 					if ((*it).ItemID.IsEqual(FName("None"))) {

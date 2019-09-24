@@ -17,7 +17,7 @@
 #include "Navigation/PathFollowingComponent.h"
 #include "AIController.h"
 
-
+#include "Public/ToolMover.h"
 #include "Public/PickUpBase.h"
 /* ----Useful HEAD
 #include "Public/APToolBase.h"
@@ -51,17 +51,6 @@ AVenturePawn::AVenturePawn()
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
 	CameraComp->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 
-	// Create a decal in the world to show the cursor's location
-	CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
-	CursorToWorld->SetupAttachment(RootComponent);
-	static ConstructorHelpers::FObjectFinder<UMaterial> DecalMaterialAsset(TEXT("Material'/Game/Characters/Player/Materials/M_Cursor_Decal.M_Cursor_Decal'"));
-	if (DecalMaterialAsset.Succeeded())
-	{
-		CursorToWorld->SetDecalMaterial(DecalMaterialAsset.Object);
-	}
-	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
-	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());
-
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
@@ -81,25 +70,16 @@ AVenturePawn::AVenturePawn()
 void AVenturePawn::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	if (CursorToWorld != nullptr)
-	{
-		if (APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			FHitResult TraceHitResult;
-			PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-			FVector CursorFV = TraceHitResult.ImpactNormal;
-			FRotator CursorR = CursorFV.Rotation();
-			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
-			CursorToWorld->SetWorldRotation(CursorR);
-		}
-	}
+	UpdateMoverTransformation();
 }
 void AVenturePawn::BeginPlay()
 {
 	Super::BeginPlay();
 	// Spawn tools when activates
 	//SpawnUsefulTools();
+
+	SpawnMover();
+	OnMouseHold();
 }
 
 
@@ -112,8 +92,11 @@ void AVenturePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AVenturePawn::Jump);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AVenturePawn::Crouch);
 	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &AVenturePawn::UnCrouch);
-	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnInteract);
-	
+
+	PlayerInputComponent->BindAction("Item1", IE_Pressed, this, &AVenturePawn::SwitchToItem1);
+	PlayerInputComponent->BindAction("Item2", IE_Pressed, this, &AVenturePawn::SwitchToItem2);
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnMouseClick);
+	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVenturePawn::OnMouseRelease);
 }
 
 void AVenturePawn::MoveForward(float axis)
@@ -153,16 +136,40 @@ void AVenturePawn::UnCrouch()
 
 void AVenturePawn::OnMouseClick()
 {
-	// Trace to see what is under the mouse cursor
-	FHitResult Hit;
-	Cast<APlayerController>(GetController())->GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-
-	if (Hit.bBlockingHit)
-	{
-		SetNewMoveDestination(Hit);
+	if (m_currentInteractable != nullptr) {
+		m_currentInteractable->Interact();
 	}
-
+	else {
+		// Debug use
+		m_toolMover->UseTool();
+		m_OnMouseHold = true;
+	}
 }
+
+void AVenturePawn::OnMouseHold()
+{
+	if (m_OnMouseHold) {
+		m_toolMover->UseTool();
+	}
+}
+
+void AVenturePawn::OnMouseRelease()
+{
+	m_OnMouseHold = false;
+}
+
+void AVenturePawn::SwitchToItem1()
+{
+	// Debug use
+	m_toolMover->SwitchToTool(FName("Harpoon"));
+}
+
+void AVenturePawn::SwitchToItem2()
+{
+	// Debug use
+	m_toolMover->SwitchToTool(FName("Pickaxe"));
+}
+
 /* ----Useful HEAD
 void AVenturePawn::InteractWithTool(AAPInteractItemBase* interactBase)
 {
@@ -238,13 +245,6 @@ UPathFollowingComponent* AVenturePawn::InitNavigationControl(AController& Contro
 
 }
 
-void AVenturePawn::OnInteract()
-{
-	if (m_currentInteractable != nullptr) {
-		m_currentInteractable->Interact();
-	}
-}
-
 void AVenturePawn::OnInteractableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	if (OtherActor != nullptr && OtherActor != this && OtherComp != nullptr) {
@@ -270,6 +270,19 @@ void AVenturePawn::OnInteractableLeft(UPrimitiveComponent* OverlappedComponent, 
 			m_currentInteractable = nullptr;
 
 		}
+	}
+}
+
+void AVenturePawn::SpawnMover()
+{
+	m_toolMover = GetWorld()->SpawnActor<AToolMover>(ToolMoverClass);
+}
+
+void AVenturePawn::UpdateMoverTransformation()
+{
+	if (m_toolMover) {
+		m_toolMover->SetActorLocation(GetActorLocation() + MoverRelativeLocation);
+		m_toolMover->SetActorRotation(GetActorRotation() + MoverRelativeRotatoin);
 	}
 }
 
