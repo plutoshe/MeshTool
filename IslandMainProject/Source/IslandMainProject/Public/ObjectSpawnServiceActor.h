@@ -29,10 +29,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		float SpawnPeriod;
 
-	//There is a bug when you set UPROPERTY to it, so I turn it off
-	//UPROPERTY(VisibleAnywhere, BlueprintCallable)
-	TQueue<TSubclassOf<APickUpBase>> ResourceQueue;
-
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		void PopResource();
 
@@ -58,6 +54,8 @@ protected:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
 
+
+	TQueue<TSubclassOf<APickUpBase>> ResourceQueue;
 	TSubclassOf<class APickUpBase> m_ResourceObject;
 	FTimerDelegate m_timerDel;
 	FTimerHandle m_spawnTimeHandle;
