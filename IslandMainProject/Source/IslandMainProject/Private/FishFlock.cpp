@@ -1,7 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "FishFlock.h"
-//#include "FlockingGameMode.h"
 #include "Engine/World.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -30,10 +29,6 @@ FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, con
 			}
 
 		}
-		/*else if (currentPosition[i] < m_MainPoint[i] + mapMinSize[i] && newVelocity[i] < 0)
-		{
-			newVelocity[i] += 100.f;
-		}*/
 		else
 		{
 			currentBeyondVelocity[i] = 0;
@@ -44,16 +39,6 @@ FVector checkMapRange(const FVector& m_MainPoint, const FVector& mapMinSize, con
 		newVelocity[i] -= currentBeyondVelocity[i];
 	}
 	
-	
-	/*if (currentPosition.Y > m_MainPoint.Y + mapMaxSize.Y && newVelocity.Y > 0
-		|| currentPosition.Y < m_MainPoint.Y + mapMinSize.Y && newVelocity.Y < 0) {
-		newVelocity.Y *= -0.1f;
-	}
-
-	if (currentPosition.Z > m_MainPoint.Z + mapMaxSize.Z && newVelocity.Z > 0 ||
-		currentPosition.Z < m_MainPoint.Z + mapMinSize.Z && newVelocity.Z < 0) {
-		newVelocity.Z *= -0.1f;
-	}*/
 	return newVelocity;
 }
 
@@ -63,10 +48,6 @@ AFishFlock::AFishFlock()
 	m_previousStatesIndex = 1;
 	m_isCpuSingleThread = true;
 	PrimaryActorTick.bCanEverTick = true;
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMeshOb(TEXT("StaticMesh'/Game/Characters/NPC/seaBass.seaBass'"));
-	m_staticMesh = StaticMeshOb.Object;
-	UE_LOG(LogTemp, Log, TEXT("%.2f %.2f %.2f"), m_mapMaxSize[0], m_mapMaxSize[1], m_mapMaxSize[2]);
-
 }
 
 void AFishFlock::OnConstruction(const FTransform& Transform)
@@ -141,10 +122,6 @@ void AFishFlock::Tick(float DeltaTime)
 
 void AFishFlock::Calculate(FishState**& agents, float DeltaTime, bool isSingleThread)
 {
-	/*if (tmp == 1) return;
-	tmp++;*/
-	
-
 	float kCoh = m_kCohesion, kSep = m_kSeparation, kAlign = m_kAlignment;
 	float rCohesion = m_radiusCohesion, rSeparation = m_radiusSeparation, rAlignment = m_radiusAlignment;
 	float maxAccel = m_maxAcceleration;
@@ -201,15 +178,7 @@ void AFishFlock::Calculate(FishState**& agents, float DeltaTime, bool isSingleTh
 
 			agents[fishID][currentStatesIndex].acceleration = (cohesion * kCoh + separation * kSep + 
 				alignment * kAlign 
-				//+ (FMath::RandRange(0, 30) > 5) * FRotator(0, FMath::RandRange(0, 360), 0).Quaternion().Vector() * FMath::RandRange(10000, 40000)
 				).GetClampedToMaxSize(maxAccel);
-			/*UE_LOG(LogTemp, Log, TEXT("%d %.2f %.2f acc: %s , speed: %s, position: %s"), 
-				fishID , 
-				maxAccel,
-				maxVel,
-				*(agents[fishID][currentStatesIndex].acceleration.ToString()), 
-				*(agents[fishID][currentStatesIndex].velocity.ToString()),
-				*(agents[fishID][currentStatesIndex].position.ToString()));*/
 			agents[fishID][currentStatesIndex].acceleration.Z = 0;
 
 			agents[fishID][currentStatesIndex].velocity = agents[fishID][1 - currentStatesIndex].velocity + agents[fishID][currentStatesIndex].acceleration * DeltaTime;

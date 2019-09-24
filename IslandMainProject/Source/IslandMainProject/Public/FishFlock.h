@@ -45,6 +45,7 @@ public:
 		float m_radiusSeparation = 250.f;   // Separation radius. The radius within which the fish will tend to avoid collisions 
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		float m_radiusAlignment = 240.f;    // Alignment radius. The radius inside which the fish will tend to follow in one direction
+
 	// Gain factors for the three types of fish behavior. By default  all three gain factors are equals 1.0f
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		float m_kCohesion = 100.f;
@@ -81,5 +82,4 @@ private:
 	// time elapsed from last calculation
 	float m_elapsedTime = 0.f;
 	
-	// Fish static mesh object
 };
