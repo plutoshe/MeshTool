@@ -27,16 +27,31 @@ public:
 	AObjectSpawnServiceActor();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		float SpawnPeriod;
+		float SpawnPeriod = 3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		float InitialSpawnTiming = 3;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		int SpawnAmount = 3;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void PopResource();
+		void PopObject();
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
-		void SpawnResource(TSubclassOf<class APickUpBase> spawnResource);
+		void SpawnObject(TSubclassOf<class AActor> spawnobject);
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		FVector GetRandomLocation();
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		bool EnqueueObject(int objectnumber);
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		void ChangeTimerTime(float frequency);
+
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		void MassSpawnObject(int numberofamount, float spawnlag);
 
 	FORCEINLINE class UBoxComponent* GetSpawnArea() const
 	{
@@ -52,13 +67,20 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-		TArray< TSubclassOf<class APickUpBase>> PickUpBlueprints;
+		TArray< TSubclassOf<class AActor>> PickUpBlueprints;
 
+	UFUNCTION(BlueprintCallable, Category = "SpawnService")
+		void CleanUpStoredObjects();
 
-	TQueue<TSubclassOf<APickUpBase>> ResourceQueue;
-	TSubclassOf<class APickUpBase> m_ResourceObject;
+	class TArray<AActor*> m_storedObjects;
+
+	// Queue for object spawning
+	TQueue<TSubclassOf<AActor>> ObjectQueue;
+
 	FTimerDelegate m_timerDel;
 	FTimerHandle m_spawnTimeHandle;
+
+	
 
 public:
 	// Called every frame

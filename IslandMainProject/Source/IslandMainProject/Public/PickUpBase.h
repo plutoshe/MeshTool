@@ -39,6 +39,7 @@ public:
 
 	FORCEINLINE class UCapsuleComponent* GetRootCompoennt() const { return CapusuleComponent; }
 
+	void Test();
 protected:
 
 	// Root Component
@@ -83,7 +84,6 @@ protected:
 	virtual void BeginPlay() override;
 
 #pragma region FloatingEffect
-
 	// The timing offset for floating effect
 	float m_floatingEffectOffset;
 	// The thresh hold for getting picked up
@@ -107,6 +107,9 @@ private:
 public:
 
 	void AddImpulseToOverlapComp(const FVector _dir, float _magnitute);
+
+	//Check if the component is destroied.
+	bool m_bIsValid;
 
 	virtual void Tick(float DeltaTime) override;
 

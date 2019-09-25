@@ -43,6 +43,7 @@ APickUpBase::APickUpBase()
 	m_thresholdToCollect = 3;
 	m_floatingEffectRange = 30;
 	m_floatingEffectFrequency = 3;
+	m_bIsValid = true;
 }
 
 void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
@@ -56,6 +57,7 @@ void APickUpBase::OnPawnEnter(UPrimitiveComponent* OverlappedComponent, AActor* 
 
 			m_bIsGetCollected = true;
 
+			CapusuleComponent->SetSimulatePhysics(false);
 			SuperMesh->SetSimulatePhysics(false);
 			SuperMesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
 			SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -129,6 +131,11 @@ void APickUpBase::SimulateFloatingEffect(float deltaTime)
 		m_floatingEffectOffset += deltaTime;
 		SuperMesh->SetRelativeLocation(NewLoc);
 	}
+}
+
+void APickUpBase::Test()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Fuck you"));
 }
 
 UStaticMesh* APickUpBase::GetRandomMesh()
