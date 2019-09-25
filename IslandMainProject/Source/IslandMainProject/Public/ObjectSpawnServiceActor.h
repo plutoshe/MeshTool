@@ -35,6 +35,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		int SpawnAmount = 3;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		int MaxExistAmount = 5;
+
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")
 		void PopObject();
 

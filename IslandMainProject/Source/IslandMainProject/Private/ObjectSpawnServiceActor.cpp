@@ -60,10 +60,6 @@ void AObjectSpawnServiceActor::SpawnObject(TSubclassOf<class AActor> spawnobject
 			FVector spawnLocation = this->GetActorLocation();
 
 			AActor* object = world->SpawnActor<AActor>(spawnobject, GetRandomLocation(), rotator, spawnParams);
-			APickUpBase* hello = nullptr;
-			if (Cast<APickUpBase>(object))
-				hello = Cast<APickUpBase>(object);
-				hello->Test();
 			m_storedObjects.Add(object);
 		}
 	}
@@ -103,7 +99,7 @@ void AObjectSpawnServiceActor::ChangeTimerTime(float time)
 void AObjectSpawnServiceActor::MassSpawnObject(int numberofamount, float spawnlag)
 {
 	CleanUpStoredObjects();
-	if (m_storedObjects.Num() >= 5)
+	if (m_storedObjects.Num() >= MaxExistAmount)
 	{
 		ChangeTimerTime(3);
 		return;
@@ -128,8 +124,6 @@ void AObjectSpawnServiceActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//m_timerDel.BindUFunction(this, FName("SpawnObject"), m_resouceObject);
-	//GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
 	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmount, 2);
 	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, SpawnPeriod, true, InitialSpawnTiming);
 }

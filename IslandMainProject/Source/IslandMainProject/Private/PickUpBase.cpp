@@ -109,6 +109,7 @@ void APickUpBase::GravitateTowardPlayer(float deltaTime)
 		if (playerInven && playerInven->AddItem(ItemID, Amount))
 		{
 			m_owner = nullptr;
+			m_bIsValid = false;
 			Destroy();
 		}
 	}
