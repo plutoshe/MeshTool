@@ -25,8 +25,10 @@ void UCameraControlComponent::BeginPlay()
 	GetOwnersCameraComponents();
 	SetCamerasProperties();
 
+/*
 	m_owner->InputComponent->BindAction("RotateCameraC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90Clockwise);
 	m_owner->InputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90CounterClockwise);
+*/
 
 	APawn* pawn = Cast<APawn>(m_owner);
 	m_owner->InputComponent->BindAxis("LookUp");
@@ -77,6 +79,7 @@ void UCameraControlComponent::SetCamerasProperties()
 	m_ownersCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 }
 
+/*
 void UCameraControlComponent::RotateCamera90Clockwise()
 {
 	if (!m_bRotating)
@@ -85,8 +88,9 @@ void UCameraControlComponent::RotateCamera90Clockwise()
 		m_destRotator.Add(0, 90, 0);
 		m_bRotating = true;
 	}
-}
+}*/
 
+/*
 void UCameraControlComponent::RotateCamera90CounterClockwise()
 {
 	if (!m_bRotating)
@@ -96,9 +100,11 @@ void UCameraControlComponent::RotateCamera90CounterClockwise()
 		m_bRotating = true;
 	}
 }
+*/
 
 void UCameraControlComponent::PerformCameraRotation(float deltaSeconds)
 {
+/*
 	if (m_bRotating)
 	{
 		m_ownersCameraBoom->SetWorldRotation(FMath::RInterpTo(m_ownersCameraBoom->GetComponentRotation(), m_destRotator, deltaSeconds, 30.0f));
@@ -107,7 +113,7 @@ void UCameraControlComponent::PerformCameraRotation(float deltaSeconds)
 			m_bRotating = false;
 			m_ownersCameraBoom->SetWorldRotation(m_destRotator);
 		}
-	}
+	}*/
 
 	// Rotate screen along with a mouse movement
 	m_ownersCameraBoom->AddRelativeRotation(FRotator( (m_owner->InputComponent->GetAxisValue("LookUp")), m_owner->InputComponent->GetAxisValue("LookRight"), 0.f));
