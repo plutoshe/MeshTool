@@ -61,7 +61,7 @@ void AIslandMainProjectGameModeBase::SwitchToMode(EModeEnum mode)
 	}
 }
 
-bool AIslandMainProjectGameModeBase::CheckIfResourceEnouth(FName sourceID)
+bool AIslandMainProjectGameModeBase::CheckIfResourceEnough(FName sourceID)
 {
 	if (!m_cachedVenturePawn) return false;
 	

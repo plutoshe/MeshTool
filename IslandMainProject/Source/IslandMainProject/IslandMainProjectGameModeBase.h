@@ -21,8 +21,8 @@ public:
 	AIslandMainProjectGameModeBase();
 
 	class UDataTable* GetItemDB() const { return m_InventoryItemDB; }
-	class UDataTable* GetBuildingResrouceDB() const { return m_buildingResourceDB; }
-
+	class UDataTable* GetBuildingResourceDB() const { return m_buildingResourceDB; }
+	class UDataTable* GetToolDB() const { return m_toolDB; }
 	/* ----Useful HEAD
 	TArray<TSubclassOf<class AAPToolBase>> GetSpawnToolList() const { return m_ToolClassesToSpawn; }
 	*/
@@ -35,9 +35,10 @@ protected:
 		*/
 	UPROPERTY(EditDefaultsOnly, Category = "InventorySystem")
 		class UDataTable* m_InventoryItemDB;
-	UPROPERTY(EditDefaultsOnly, Category = "InventorySystem")
+	UPROPERTY(EditDefaultsOnly, Category = "BuildingSystem")
 		class UDataTable* m_buildingResourceDB;
-
+	UPROPERTY(EditDefaultsOnly, Category = "Tool")
+		class UDataTable* m_toolDB;
 #pragma region BuildingSystem
 public:
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
@@ -50,7 +51,7 @@ public:
 		EModeEnum m_CurrentMode;
 
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		bool CheckIfResourceEnouth(FName sourceID);
+		bool CheckIfResourceEnough(FName sourceID);
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
 		TArray<int> GetAmountsOfRequiredResource(FName sourceID);
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")

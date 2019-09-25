@@ -36,11 +36,11 @@ APickUpBase::APickUpBase()
 	SuperMesh->SetupAttachment(RootComponent);
 	SuperMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	m_floatingEffectSpeed = 700.f;
+	m_floatingEffectSpeed = 900.f;
 	BAbleToPickup = false;
 	RespawnTime = 1.4f;
 
-	m_thresholdToCollect = 3;
+	m_thresholdToCollect = 8;
 	m_floatingEffectRange = 30;
 	m_floatingEffectFrequency = 3;
 	m_bIsValid = true;
