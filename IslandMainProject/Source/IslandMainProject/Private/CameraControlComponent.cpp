@@ -16,11 +16,8 @@ UCameraControlComponent::UCameraControlComponent()
 }
 
 
-// Called when the game starts
-void UCameraControlComponent::BeginPlay()
+void UCameraControlComponent::InitializeCameraComponent()
 {
-	Super::BeginPlay();
-
 	// Set the properties for camera components
 	GetOwnersCameraComponents();
 	SetCamerasProperties();
@@ -39,6 +36,14 @@ void UCameraControlComponent::BeginPlay()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("There is an pawn doesn't get controller"));
 	}
+}
+
+// Called when the game starts
+void UCameraControlComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitializeCameraComponent();
 }
 
 void UCameraControlComponent::GetOwnersCameraComponents()

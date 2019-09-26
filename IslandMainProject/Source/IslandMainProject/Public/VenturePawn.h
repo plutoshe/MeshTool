@@ -27,6 +27,8 @@ public:
 
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() { return InventoryComp; }
 
+	FORCEINLINE class UCameraControlComponent* GetCameraControlComponent() {return CameraControlComp;}
+
 	/* ----Useful HEAD
 	void InteractWithTool(class AAPInteractItemBase* interactBase);
 	*/

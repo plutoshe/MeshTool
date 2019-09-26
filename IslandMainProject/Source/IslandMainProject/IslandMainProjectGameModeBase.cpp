@@ -3,6 +3,7 @@
 
 #include "IslandMainProjectGameModeBase.h"
 #include "Public/VenturePawn.h"
+#include "Public/CameraControlComponent.h"
 #include "Public/InventoryComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -32,6 +33,7 @@ void AIslandMainProjectGameModeBase::GoToExploreMode()
 		APlayerController* controller = GetWorld()->GetFirstPlayerController();
 		controller->UnPossess();
 		controller->Possess(this->m_cachedVenturePawn);
+		this->m_cachedVenturePawn->GetCameraControlComponent()->InitializeCameraComponent();
 
 		UE_LOG(LogTemp, Log, TEXT("Go to Exploration Mode"));
 	}
