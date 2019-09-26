@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
+#include "PickUpBase.h"
 
 #define WOODPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_WoodPickUp.BP_WoodPickUp'"
 #define FISHPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_FishPickUp.BP_FishPickUp'"
@@ -20,35 +21,31 @@ AObjectSpawnServiceActor::AObjectSpawnServiceActor()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	{
-		static ConstructorHelpers::FObjectFinder<UBlueprint> APickUpBase(TEXT(WOODPICKUPPATH));
-		if (APickUpBase.Object)
+		static ConstructorHelpers::FObjectFinder<UBlueprint> AActor(TEXT(WOODPICKUPPATH));
+		if (AActor.Object)
 		{
-			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
+			PickUpBlueprints.Add((UClass*)AActor.Object->GeneratedClass);
 		}
 	}
 	{
-		static ConstructorHelpers::FObjectFinder<UBlueprint> APickUpBase(TEXT(FISHPICKUPPATH));
-		if (APickUpBase.Object)
+		static ConstructorHelpers::FObjectFinder<UBlueprint> AActor(TEXT(FISHPICKUPPATH));
+		if (AActor.Object)
 		{
-			PickUpBlueprints.Add((UClass*)APickUpBase.Object->GeneratedClass);
+			PickUpBlueprints.Add((UClass*)AActor.Object->GeneratedClass);
 		}
 	}
-
-	ResourceQueue.Enqueue(PickUpBlueprints[0]);
-	ResourceQueue.Enqueue(PickUpBlueprints[0]);
-	ResourceQueue.Enqueue(PickUpBlueprints[1]);
 }
 
-void AObjectSpawnServiceActor::PopResource()
+void AObjectSpawnServiceActor::PopObject()
 {
-	TSubclassOf<class APickUpBase> pop;
-	ResourceQueue.Dequeue(pop);
-	SpawnResource(pop);
+	TSubclassOf<class AActor> pop;
+	ObjectQueue.Dequeue(pop);
+	SpawnObject(pop);
 }
 
-void AObjectSpawnServiceActor::SpawnResource(TSubclassOf<class APickUpBase> spawnresource)
+void AObjectSpawnServiceActor::SpawnObject(TSubclassOf<class AActor> spawnobject)
 {
-	if (spawnresource)
+	if (spawnobject)
 	{
 		UWorld* world = GetWorld();
 		if (world)
@@ -56,13 +53,14 @@ void AObjectSpawnServiceActor::SpawnResource(TSubclassOf<class APickUpBase> spaw
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
 
 			FActorSpawnParameters spawnParams;
-			spawnParams.Owner = this;
+			//spawnParams.Owner = this;
 
 			FRotator rotator;
 
 			FVector spawnLocation = this->GetActorLocation();
 
-			APickUpBase* test = world->SpawnActor<APickUpBase>(spawnresource, GetRandomLocation(), rotator, spawnParams);
+			AActor* object = world->SpawnActor<AActor>(spawnobject, GetRandomLocation(), rotator, spawnParams);
+			m_storedObjects.Add(object);
 		}
 	}
 	else
@@ -82,15 +80,67 @@ FVector AObjectSpawnServiceActor::GetRandomLocation()
 	return spawnpoint;
 }
 
+bool AObjectSpawnServiceActor::EnqueueObject(int objectnumber)
+{
+	if (ObjectQueue.Enqueue(PickUpBlueprints[objectnumber]))
+	{
+		return true;
+	}
+	return false;
+}
+
+void AObjectSpawnServiceActor::ChangeTimerTime(float time)
+{
+	GetWorld()->GetTimerManager().ClearTimer(m_spawnTimeHandle);
+	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmount, 2);
+	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, time, true);
+}
+
+void AObjectSpawnServiceActor::MassSpawnObject(int numberofamount, float spawnlag)
+{
+	CleanUpStoredObjects();
+	if (m_storedObjects.Num() >= MaxExistAmount)
+	{
+		ChangeTimerTime(3);
+		return;
+	}
+	if (spawnlag < 0)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Worng spawnlag parameter"));
+		return;
+	}
+	for (int i = 0; i < numberofamount; i++)
+	{
+		float randomtime = FMath::FRandRange(0, spawnlag);
+		int randomitem = FMath::RandRange(0, PickUpBlueprints.Num() -1 );
+		SpawnObject(PickUpBlueprints[randomitem]);
+	}
+	
+	ChangeTimerTime(SpawnPeriod);
+}
+
 // Called when the game starts or when spawned
 void AObjectSpawnServiceActor::BeginPlay()
 {
 	Super::BeginPlay();
-	//SpawnResource();
 
-	//m_timerDel.BindUFunction(this, FName("SpawnResource"), m_resouceObject);
-	//GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, 5, true);
-	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, this, &AObjectSpawnServiceActor::PopResource, 5, false);
+	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmount, 2);
+	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, SpawnPeriod, true, InitialSpawnTiming);
+}
+
+void AObjectSpawnServiceActor::CleanUpStoredObjects()
+{
+	for (int i = 0; i < m_storedObjects.Num(); i++)
+	{
+			APickUpBase* pickupbase = Cast<APickUpBase>(m_storedObjects[i]);
+			if (pickupbase)
+			{
+				if (!pickupbase->m_bIsValid)
+				{
+					m_storedObjects.RemoveAt(i);
+				}
+			}
+	}
 }
 
 // Called every frame
