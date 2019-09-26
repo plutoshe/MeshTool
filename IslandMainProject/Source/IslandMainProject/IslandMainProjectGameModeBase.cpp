@@ -33,7 +33,6 @@ void AIslandMainProjectGameModeBase::GoToExploreMode()
 		APlayerController* controller = GetWorld()->GetFirstPlayerController();
 		controller->UnPossess();
 		controller->Possess(this->m_cachedVenturePawn);
-		this->m_cachedVenturePawn->GetCameraControlComponent()->InitializeCameraComponent();
 
 		UE_LOG(LogTemp, Log, TEXT("Go to Exploration Mode"));
 	}
@@ -144,11 +143,16 @@ class UMaterialInterface* AIslandMainProjectGameModeBase::GetBuildNotPlaceableMa
 	return this->m_materialBuildNotPlaceable;
 }
 
+void AIslandMainProjectGameModeBase::RegisterCachedBuildingPawn(ABuildingPawn * pawn)
+{
+	m_cachedBuildingPawn = pawn;
+}
+
 void AIslandMainProjectGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	m_CurrentMode = EModeEnum::ME_Building;
+	m_CurrentMode = EModeEnum::ME_Exploration;
 
 	m_cachedVenturePawn = Cast<AVenturePawn>(GetWorld()->GetFirstPlayerController()->GetPawn());
 

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "IslandMainProjectGameModeBase.h"
 #include "VenturePawn.generated.h"
 
 UCLASS()
@@ -20,14 +19,12 @@ public:
 	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
 
-	/** Returns TopDownCameraComponent subobject **/
-	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return CameraComp; }
+	/** Returns CameraComponent subobject **/
+	FORCEINLINE class UCameraComponent* GetCameraComponent() const { return CameraComp; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() { return InventoryComp; }
-
-	FORCEINLINE class UCameraControlComponent* GetCameraControlComponent() {return CameraControlComp;}
 
 	/* ----Useful HEAD
 	void InteractWithTool(class AAPInteractItemBase* interactBase);
@@ -71,11 +68,6 @@ protected:
 #pragma region Tools
 
 protected:
-
-	// Pinter to a game mode class
-	UPROPERTY()
-		AIslandMainProjectGameModeBase* m_gameMode;
-
 	class AToolMover* m_toolMover;
 	UPROPERTY(EditDefaultsOnly, Category = Tool)
 		TSubclassOf<class AToolMover> ToolMoverClass;

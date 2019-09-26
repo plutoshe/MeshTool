@@ -7,6 +7,7 @@
 #include "Engine/Classes/GameFramework/Pawn.h"
 #include "Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Public/CameraControlComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Public/Constants/GameInputConstants.h"
 #include "IslandMainProjectGameModeBase.h"
@@ -31,6 +32,9 @@ ABuildingPawn::ABuildingPawn()
 	// Primary Camera
 	this->PrimaryCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PrimaryCameraComponent"));
 	this->PrimaryCameraComponent->SetupAttachment(this->PrimaryCameraBoom);
+
+	// Camera Control Comp
+	this->CameraControlComp = CreateDefaultSubobject<UCameraControlComponent>(TEXT("CameraControlComp"));
 }
 
 // Called when the game starts or when spawned
@@ -68,6 +72,7 @@ void ABuildingPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_LEFT, IE_Pressed, this, &ABuildingPawn::CyclePieceLeft);
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_RIGHT, IE_Pressed, this, &ABuildingPawn::CyclePieceRight);
 
+	CameraControlComp->InitializeCameraComponent();
 
 	if (Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode()))
 		m_gameMode = Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode());

@@ -99,10 +99,8 @@ void AVenturePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnMouseClick);
 	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVenturePawn::OnMouseRelease);
 
-
-	if (Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode()))
-		m_gameMode = GetWorld()->GetAuthGameMode<AIslandMainProjectGameModeBase>();
-	PlayerInputComponent->BindAction(GameInputConstants::CHANGE_GAME_MODE, IE_Pressed, m_gameMode, &AIslandMainProjectGameModeBase::GoToExploreMode);
+	//Initialize for CameraControl Component
+	CameraControlComp->InitializeCameraComponent();
 }
 
 void AVenturePawn::MoveForward(float axis)

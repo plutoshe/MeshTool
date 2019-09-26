@@ -52,6 +52,9 @@ private:
 	UPROPERTY(VisibleAnywhere , Category = "Building")
 	ABuildingPiece* m_currentPiece;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Component, meta = (AllowPrivateAccess = "true"))
+	class UCameraControlComponent* CameraControlComp;
+
 	UPROPERTY(VisibleAnywhere, Category = "Building")
 	int m_currentSelectedPieceIndex;
 
