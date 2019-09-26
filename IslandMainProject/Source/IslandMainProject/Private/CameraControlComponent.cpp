@@ -78,7 +78,7 @@ void UCameraControlComponent::SetCamerasProperties()
 	// Create a camera boom...
 	m_ownersCameraBoom->bAbsoluteRotation = true; // Don't want arm to rotate when character does
 	m_ownersCameraBoom->TargetArmLength = 800.f;
-	m_ownersCameraBoom->RelativeRotation = FRotator(-45.0f, 0.f, 0.f);
+	//m_ownersCameraBoom->RelativeRotation = FRotator(-45.0f, 0.f, 0.f);
 	m_ownersCameraBoom->RelativeLocation = FVector(0.0f, 0.f, 0.f);
 	m_ownersCameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
 	m_ownersCameraBoom->bUsePawnControlRotation = false;

@@ -31,8 +31,9 @@ void AIslandMainProjectGameModeBase::GoToExploreMode()
 		}
 
 		APlayerController* controller = GetWorld()->GetFirstPlayerController();
-		controller->UnPossess();
 		controller->SetViewTargetWithBlend(this->m_cachedVenturePawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
+		controller->UnPossess();
+		//controller->SetViewTargetWithBlend(this->m_cachedVenturePawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
 		controller->Possess(this->m_cachedVenturePawn);
 
 		UE_LOG(LogTemp, Log, TEXT("Go to Exploration Mode"));
@@ -67,7 +68,7 @@ void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding * targetBuilding
 		{
 			APlayerController* controller = GetWorld()->GetFirstPlayerController();
 			controller->UnPossess();
-			controller->SetViewTargetWithBlend(this->m_cachedBuildingPawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
+			//controller->SetViewTargetWithBlend(this->m_cachedBuildingPawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
 			controller->Possess(this->m_cachedBuildingPawn);
 
 			this->m_cachedBuildingPawn->SetTargetBuildingAndInitialize(targetBuilding);

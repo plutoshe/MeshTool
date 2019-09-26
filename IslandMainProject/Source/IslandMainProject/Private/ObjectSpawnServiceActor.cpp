@@ -50,7 +50,7 @@ void AObjectSpawnServiceActor::SpawnObject(TSubclassOf<class AActor> spawnobject
 		UWorld* world = GetWorld();
 		if (world)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
+			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
 
 			FActorSpawnParameters spawnParams;
 			FRotator rotator;
@@ -131,13 +131,27 @@ void AObjectSpawnServiceActor::CleanUpStoredObjects()
 	{
 		if (m_storedObjects[i] != nullptr)
 		{
-			APickUpBase* pickupbase = Cast<APickUpBase>(m_storedObjects[i]);
-			if (pickupbase)
+			if (m_storedObjects[i]->IsValidLowLevel())
 			{
-				if (!pickupbase->m_bIsValid)
+				if (!m_storedObjects[i]->IsPendingKill())
+				{
+					APickUpBase* pickupbase = Cast<APickUpBase>(m_storedObjects[i]);
+					if (pickupbase)
+					{
+						if (!pickupbase->m_bIsValid)
+						{
+							m_storedObjects.RemoveAt(i);
+						}
+					}
+				}
+				else
 				{
 					m_storedObjects.RemoveAt(i);
 				}
+			}
+			else
+			{
+				m_storedObjects.RemoveAt(i);
 			}
 		}
 		else
