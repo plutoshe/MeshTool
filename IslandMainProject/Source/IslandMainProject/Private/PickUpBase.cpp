@@ -134,11 +134,6 @@ void APickUpBase::SimulateFloatingEffect(float deltaTime)
 	}
 }
 
-void APickUpBase::Test()
-{
-	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Fuck you"));
-}
-
 UStaticMesh* APickUpBase::GetRandomMesh()
 {
 	if (m_RandomMeshList.Num() < 1) return nullptr;

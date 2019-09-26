@@ -39,7 +39,6 @@ public:
 
 	FORCEINLINE class UCapsuleComponent* GetRootCompoennt() const { return CapusuleComponent; }
 
-	void Test();
 protected:
 
 	// Root Component
