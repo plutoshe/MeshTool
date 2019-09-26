@@ -7,27 +7,30 @@
 #include "Damageable.generated.h"
 
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
+UINTERFACE(BlueprintType)
 class UDamageable : public UInterface
 {
 	GENERATED_BODY()
 };
 
 /**
- * 
+ *
  */
 class ISLANDMAINPROJECT_API IDamageable
 {
 	GENERATED_BODY()
 
 public:
-	virtual void TakeDamage(float damage);
-	virtual void Die();
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = Damageable)
+		void GetDamage(float damage);
+		
 	UFUNCTION(BlueprintImplementableEvent, Category = Damageable)
-		void BPOnTakeDamage(float damage);
+		void BPOnGetdamage();
+	void Die();
+
+
 protected:
 
 	int m_currentHealth;
-	int MaxHealth;
+	int m_maxHealth;
 };

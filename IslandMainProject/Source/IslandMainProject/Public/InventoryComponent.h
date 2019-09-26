@@ -21,7 +21,8 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Inventory")
 		TArray<FInventoryItem> m_inventory;
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Inventory")
+		TArray<FInventoryItem> InitialItemList;
 public:
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		bool AddItem(FName itemID, int amount);
@@ -31,6 +32,8 @@ public:
 		void RemoveItem(FName itemID);
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void ThrowItem(FName itemID, int amount);
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+		void ThrowAllItems();
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 		void TransformItemTo(UInventoryComponent* Other);
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
