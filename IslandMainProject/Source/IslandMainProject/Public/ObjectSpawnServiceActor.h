@@ -26,16 +26,16 @@ public:
 	// Sets default values for this actor's properties
 	AObjectSpawnServiceActor();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		float SpawnPeriod = 3;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		float InitialSpawnTiming = 3;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-		int SpawnAmount = 3;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+		int SpawnAmountAtOneTime = 3;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 		int MaxExistAmount = 5;
 
 	UFUNCTION(BlueprintCallable, Category = "SpawnService")

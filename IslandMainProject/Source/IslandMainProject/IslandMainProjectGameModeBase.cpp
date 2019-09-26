@@ -44,6 +44,12 @@ void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding * targetBuilding
 	if (this->m_CurrentMode != EModeEnum::ME_Building)
 	{
 
+		if (!targetBuilding)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Could not switch to Building Mode. Building Target Null"));
+			return;
+		}
+
 		if (this->m_cachedBuildingPawn == nullptr)
 		{
 			FVector location = targetBuilding->GetActorLocation();

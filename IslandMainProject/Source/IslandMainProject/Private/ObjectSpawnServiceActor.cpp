@@ -89,7 +89,7 @@ bool AObjectSpawnServiceActor::EnqueueObject(int objectnumber)
 void AObjectSpawnServiceActor::ChangeTimerTime(float time)
 {
 	GetWorld()->GetTimerManager().ClearTimer(m_spawnTimeHandle);
-	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmount, 2);
+	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmountAtOneTime, 2);
 	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, time, true);
 }
 
@@ -121,7 +121,7 @@ void AObjectSpawnServiceActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmount, 2);
+	m_timerDel.BindUFunction(this, FName("MassSpawnObject"), SpawnAmountAtOneTime, 2);
 	GetWorldTimerManager().SetTimer(m_spawnTimeHandle, m_timerDel, SpawnPeriod, true, InitialSpawnTiming);
 }
 
@@ -129,6 +129,8 @@ void AObjectSpawnServiceActor::CleanUpStoredObjects()
 {
 	for (int i = 0; i < m_storedObjects.Num(); i++)
 	{
+		if (m_storedObjects[i] != nullptr)
+		{
 			APickUpBase* pickupbase = Cast<APickUpBase>(m_storedObjects[i]);
 			if (pickupbase)
 			{
@@ -137,6 +139,11 @@ void AObjectSpawnServiceActor::CleanUpStoredObjects()
 					m_storedObjects.RemoveAt(i);
 				}
 			}
+		}
+		else
+		{
+			m_storedObjects.RemoveAt(i);
+		}
 	}
 }
 
