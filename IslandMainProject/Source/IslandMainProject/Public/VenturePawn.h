@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "IslandMainProjectGameModeBase.h"
 #include "VenturePawn.generated.h"
 
 UCLASS()
@@ -68,6 +69,11 @@ protected:
 #pragma region Tools
 
 protected:
+
+	// Pinter to a game mode class
+	UPROPERTY()
+		AIslandMainProjectGameModeBase* m_gameMode;
+
 	class AToolMover* m_toolMover;
 	UPROPERTY(EditDefaultsOnly, Category = Tool)
 		TSubclassOf<class AToolMover> ToolMoverClass;

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "IslandMainProjectGameModeBase.h"
 #include "BuildingPawn.generated.h"
 
 class ABuilding;
@@ -40,6 +41,9 @@ public:
 	void SetTargetBuildingAndInitialize(ABuilding* targetBuilding);
 	
 private:
+	// Pinter to a game mode class
+	UPROPERTY()
+		AIslandMainProjectGameModeBase* m_gameMode;
 	// Build Target
 	UPROPERTY(EditInstanceOnly, Category = "Building", meta = (AllowPrivateAccess = "true"))
 	ABuilding* m_targetBuilding;

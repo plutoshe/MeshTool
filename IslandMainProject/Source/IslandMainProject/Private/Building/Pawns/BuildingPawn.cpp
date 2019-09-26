@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Public/Building/Pawns/BuildingPawn.h"
 #include "Public/Building/Actors/Building.h"
 #include "Public/Building/Actors/BuildingPiece.h"
@@ -60,14 +59,19 @@ void ABuildingPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_LEFT, IE_Pressed, this, &ABuildingPawn::MovePieceXNeg);
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_RIGHT, IE_Pressed, this, &ABuildingPawn::MovePieceXPos);
 
-	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DOWN, IE_Pressed, this, &ABuildingPawn::MovePieceYNeg);
-	PlayerInputComponent->BindAction(GameInputConstants::MOVE_UP, IE_Pressed, this, &ABuildingPawn::MovePieceYPos);
+	PlayerInputComponent->BindAction(GameInputConstants::MOVE_UP, IE_Pressed, this, &ABuildingPawn::MovePieceYNeg);
+	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DOWN, IE_Pressed, this, &ABuildingPawn::MovePieceYPos);
 
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DESCEND, IE_Pressed, this, &ABuildingPawn::MovePieceZNeg);
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_ASCEND, IE_Pressed, this, &ABuildingPawn::MovePieceZPos);
 
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_LEFT, IE_Pressed, this, &ABuildingPawn::CyclePieceLeft);
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_RIGHT, IE_Pressed, this, &ABuildingPawn::CyclePieceRight);
+
+
+	if (Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode()))
+		m_gameMode = Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode());
+	PlayerInputComponent->BindAction(GameInputConstants::CHANGE_GAME_MODE, IE_Pressed, m_gameMode, &AIslandMainProjectGameModeBase::GoToExploreMode);
 }
 
 void ABuildingPawn::SetTargetBuildingAndInitialize(ABuilding* targetBuilding)

@@ -53,10 +53,7 @@ void AObjectSpawnServiceActor::SpawnObject(TSubclassOf<class AActor> spawnobject
 			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
 
 			FActorSpawnParameters spawnParams;
-			//spawnParams.Owner = this;
-
 			FRotator rotator;
-
 			FVector spawnLocation = this->GetActorLocation();
 
 			AActor* object = world->SpawnActor<AActor>(spawnobject, GetRandomLocation(), rotator, spawnParams);

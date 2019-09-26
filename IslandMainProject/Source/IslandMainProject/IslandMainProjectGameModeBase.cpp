@@ -37,20 +37,16 @@ void AIslandMainProjectGameModeBase::GoToExploreMode()
 	}
 }
 
-void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding* targetBuilding)
+void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding * targetBuilding)
 {
-	if (this->m_CurrentMode != EModeEnum::ME_Building) {
+	if (this->m_CurrentMode != EModeEnum::ME_Building)
+	{
 
-		if (!targetBuilding)
+		if (this->m_cachedBuildingPawn == nullptr)
 		{
-			UE_LOG(LogTemp, Error, TEXT("Could not switch to Building Mode. Building Target Null"));
-			return;
-		}
-		
-		if (this->m_cachedBuildingPawn == nullptr) {
 			FVector location = targetBuilding->GetActorLocation();
 			FActorSpawnParameters spawnInfo;
-			this->m_cachedBuildingPawn = GetWorld()->SpawnActor<ABuildingPawn>(m_buildingPawnClass,location, FRotator::ZeroRotator, spawnInfo);
+			this->m_cachedBuildingPawn = GetWorld()->SpawnActor<ABuildingPawn>(m_buildingPawnClass, location, FRotator::ZeroRotator, spawnInfo);
 		}
 
 		if (!this->m_cachedBuildingPawn)
@@ -58,8 +54,8 @@ void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding* targetBuilding)
 			UE_LOG(LogTemp, Error, TEXT("Could not switch to Building Mode. Building Pawn NULL"));
 			return;
 		}
-		
-		if(this->m_cachedBuildingPawn && targetBuilding)
+
+		if (this->m_cachedBuildingPawn && targetBuilding)
 		{
 			APlayerController* controller = GetWorld()->GetFirstPlayerController();
 			controller->UnPossess();
@@ -150,9 +146,10 @@ void AIslandMainProjectGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
+	m_CurrentMode = EModeEnum::ME_Building;
+
 	m_cachedVenturePawn = Cast<AVenturePawn>(GetWorld()->GetFirstPlayerController()->GetPawn());
 
 	// TODO Remove?
 	//if (!FindBuildingManager()) UE_LOG(LogTemp, Warning, TEXT("No Building Manager Found"));
-
 }

@@ -25,13 +25,20 @@ void UCameraControlComponent::BeginPlay()
 	GetOwnersCameraComponents();
 	SetCamerasProperties();
 
-	m_owner->InputComponent->BindAction("RotateCameraC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90Clockwise);
-	m_owner->InputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90CounterClockwise);
+	if (m_owner->InputComponent)
+	{
+		m_owner->InputComponent->BindAction("RotateCameraC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90Clockwise);
+		m_owner->InputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90CounterClockwise);
 
-	APawn* pawn = Cast<APawn>(m_owner);
-	m_owner->InputComponent->BindAxis("LookUp");
-	m_owner->InputComponent->BindAxis("LookRight");
-	m_owner->InputComponent->BindAxis("ZoomIn");
+		APawn* pawn = Cast<APawn>(m_owner);
+		m_owner->InputComponent->BindAxis("LookUp");
+		m_owner->InputComponent->BindAxis("LookRight");
+		m_owner->InputComponent->BindAxis("ZoomIn");
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("There is an pawn doesn't get controller"));
+	}
 }
 
 void UCameraControlComponent::GetOwnersCameraComponents()
