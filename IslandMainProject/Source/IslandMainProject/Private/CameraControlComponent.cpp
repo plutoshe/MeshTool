@@ -127,7 +127,8 @@ void UCameraControlComponent::PerformCameraRotation(float deltaSeconds)
 			m_ownersCameraBoom->SetWorldRotation(m_destRotator);
 		}
 	}
-
+	
+	
 	// Rotate screen along with a mouse movement
 	m_ownersCameraBoom->AddRelativeRotation(FRotator( (m_owner->InputComponent->GetAxisValue("LookUp")), m_owner->InputComponent->GetAxisValue("LookRight"), 0.f));
 	// Zoom in to a screen based on mouse wheel axis, -10 is a magic number to adjust intensity
