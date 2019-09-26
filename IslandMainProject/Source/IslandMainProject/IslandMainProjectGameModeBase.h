@@ -39,42 +39,55 @@ protected:
 		class UDataTable* m_buildingResourceDB;
 	UPROPERTY(EditDefaultsOnly, Category = "Tool")
 		class UDataTable* m_toolDB;
-#pragma region BuildingSystem
+	
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		FORCEINLINE bool InBuildingMode() const { return m_inBuildingMode; }
+	FORCEINLINE bool InBuildingMode() const { return m_inBuildingMode; }
 
 	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		void SwitchToMode(EModeEnum mode);
+	void GoToExploreMode();
 
-	UPROPERTY(VisibleAnywhere, Category = "BuilidingSystem")
-		EModeEnum m_CurrentMode;
+	UFUNCTION(BlueprintCallable, Category = "BuildingSystem")
+	void GoToBuildingMode(class ABuilding* targetBuilding);
 
-	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		bool CheckIfResourceEnough(FName sourceID);
-	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		TArray<int> GetAmountsOfRequiredResource(FName sourceID);
-	UFUNCTION(BlueprintCallable, Category = "BuilidingSystem")
-		bool CostResources(FName sourceID);
+	UPROPERTY(VisibleAnywhere, Category = "Game Mode State")
+	EModeEnum m_CurrentMode;
+		
+	UFUNCTION(BlueprintCallable, Category = "Building System")
+	TArray<int> GetAmountsOfRequiredResource(FName sourceID);
+	
+	UFUNCTION(BlueprintCallable, Category = "Building System")
+	bool CostResources(FName sourceID);
+
+	UFUNCTION(BlueprintCallable, Category = "Builiding System")
+	bool CheckIfResourceEnough(FName sourceID);
+
+	UFUNCTION(BlueprintCallable, Category = "Building System")
+	class UMaterialInterface* GetBuildPlaceableMaterial();
+
+	UFUNCTION(BlueprintCallable, Category = "Building System")
+	class UMaterialInterface* GetBuildNotPlaceableMaterial();
+
 protected:
 	bool m_inBuildingMode;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Exploring System")
+	TSubclassOf<class AVenturePawn> m_venturePawnClass;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Building System")
+	TSubclassOf<class ABuildingPawn> m_buildingPawnClass;
 
-	bool FindBuildingManager();
-
-	UPROPERTY(EditDefaultsOnly, Category = "BuilidingSystem")
-		TSubclassOf<class AVenturePawn> m_venturePawnClass;
-	/* ----Useful HEAD
-	UPROPERTY(EditDefaultsOnly, Category = "BuilidingSystem")
-		TSubclassOf<class ABuildingSystemPawn> m_buildingPawnClass;
-		*/
-
+	UPROPERTY(EditDefaultsOnly, Category = "Building System")
+	class UMaterialInterface* m_materialBuildPlaceable;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Building System")
+	class UMaterialInterface* m_materialBuildNotPlaceable;
+	
 	class AVenturePawn* m_cachedVenturePawn;
-	/* ----Useful HEAD
-	class ABuildingSynchronization* m_buildingManager;
-	class ABuildingSystemPawn* m_cachedBuildingPawn;
-*/
+	class ABuildingPawn* m_cachedBuildingPawn;
+
 	virtual void BeginPlay() override;
 
-#pragma endregion
 
 };
