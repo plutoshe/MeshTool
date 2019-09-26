@@ -67,6 +67,7 @@ void UCameraControlComponent::SetCamerasProperties()
 	m_ownersCameraBoom->bAbsoluteRotation = true; // Don't want arm to rotate when character does
 	m_ownersCameraBoom->TargetArmLength = 800.f;
 	m_ownersCameraBoom->RelativeRotation = FRotator(-45.0f, 0.f, 0.f);
+	m_ownersCameraBoom->RelativeLocation = FVector(0.0f, 0.f, 0.f);
 	m_ownersCameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
 	m_ownersCameraBoom->bUsePawnControlRotation = false;
 	m_ownersCameraBoom->bInheritPitch = false;
@@ -99,6 +100,12 @@ void UCameraControlComponent::RotateCamera90CounterClockwise()
 
 void UCameraControlComponent::PerformCameraRotation(float deltaSeconds)
 {
+	if(!m_owner->InputComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Input Component Is Null"));
+		return;
+	}
+	
 	if (m_bRotating)
 	{
 		m_ownersCameraBoom->SetWorldRotation(FMath::RInterpTo(m_ownersCameraBoom->GetComponentRotation(), m_destRotator, deltaSeconds, 30.0f));
