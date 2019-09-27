@@ -8,8 +8,6 @@
 #include "UObject/ConstructorHelpers.h"
 #include "PickUpBase.h"
 
-#define WOODPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_WoodPickUp.BP_WoodPickUp'"
-#define FISHPICKUPPATH "Blueprint'/Game/Environment/PickUpResource/Blurprints/BP_FishPickUp.BP_FishPickUp'"
 
 // Sets default values
 AObjectSpawnServiceActor::AObjectSpawnServiceActor()
@@ -19,21 +17,7 @@ AObjectSpawnServiceActor::AObjectSpawnServiceActor()
 	SpawnArea->SetupAttachment(RootComponent);
 
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	{
-		static ConstructorHelpers::FObjectFinder<UBlueprint> AActor(TEXT(WOODPICKUPPATH));
-		if (AActor.Object)
-		{
-			PickUpBlueprints.Add((UClass*)AActor.Object->GeneratedClass);
-		}
-	}
-	{
-		static ConstructorHelpers::FObjectFinder<UBlueprint> AActor(TEXT(FISHPICKUPPATH));
-		if (AActor.Object)
-		{
-			PickUpBlueprints.Add((UClass*)AActor.Object->GeneratedClass);
-		}
-	}
+
 }
 
 void AObjectSpawnServiceActor::PopObject()

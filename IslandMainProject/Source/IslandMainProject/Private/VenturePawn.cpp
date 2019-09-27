@@ -140,14 +140,19 @@ void AVenturePawn::UnCrouch()
 
 void AVenturePawn::OnMouseClick()
 {
-	if (m_currentInteractable != nullptr) {
-		m_currentInteractable->Interact();
-	}
-	else {
-		// Debug use
-		m_toolMover->UseTool();
-		m_OnMouseHold = true;
-	}
+	//if (m_currentInteractable != nullptr)
+	//{
+	//	m_currentInteractable->Interact();
+	//}
+	//else
+	//{
+	//	// Debug use
+	//	m_toolMover->UseTool();
+	//	m_OnMouseHold = true;
+	//}
+
+	m_toolMover->UseTool();
+	m_OnMouseHold = true;
 }
 
 void AVenturePawn::OnMouseHold()
