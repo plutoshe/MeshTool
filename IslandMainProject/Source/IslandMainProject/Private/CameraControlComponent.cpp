@@ -22,6 +22,7 @@ void UCameraControlComponent::InitializeCameraComponent()
 	GetOwnersCameraComponents();
 	SetCamerasProperties();
 
+	if(m_owner->InputComponent != nullptr){
 /*
 	m_owner->InputComponent->BindAction("RotateCameraC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90Clockwise);
 	m_owner->InputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90CounterClockwise);
