@@ -34,7 +34,7 @@ void AObjectSpawnServiceActor::SpawnObject(TSubclassOf<class AActor> spawnobject
 		UWorld* world = GetWorld();
 		if (world)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
+			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Some actor is spawning"));
 
 			FActorSpawnParameters spawnParams;
 			//spawnParams.Owner = this;

@@ -7,8 +7,8 @@
 
 AToolHarpoon::AToolHarpoon()
 {
-	InteractPointComp->OnComponentBeginOverlap.AddDynamic(this, &AToolHarpoon::OnDamageableEnter);
-	InteractPointComp->OnComponentEndOverlap.AddDynamic(this, &AToolHarpoon::OnDamageableLeft);
+	InteractPointComp->OnComponentBeginOverlap.AddDynamic(this, &AToolHarpoon::OnInteractableEnter);
+	InteractPointComp->OnComponentEndOverlap.AddDynamic(this, &AToolHarpoon::OnInteractableLeft);
 
 	Damage = 20.f;
 }
@@ -26,7 +26,7 @@ void AToolHarpoon::UseToolFinish()
 	m_canDealDmg = false;
 }
 
-void AToolHarpoon::OnDamageableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AToolHarpoon::OnInteractableEnter(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor != nullptr && OtherComp != nullptr && !m_dmgDealt && m_canDealDmg) {
 		// This actor has Damageable event
@@ -37,12 +37,11 @@ void AToolHarpoon::OnDamageableEnter(UPrimitiveComponent* OverlappedComponent, A
 	}
 }
 
-void AToolHarpoon::OnDamageableLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AToolHarpoon::OnInteractableLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	if (OtherActor != nullptr && OtherComp != nullptr) {
 		// This actor has Damageable event
 		if (OtherActor->GetClass()->ImplementsInterface(UDamageable::StaticClass())) {
-
 		}
 	}
 }
