@@ -10,6 +10,7 @@ class GameInputConstants
 		
 		// Misc
 		static const FName CONFIRM;
+		static const FName CHANGE_GAME_MODE;
 
 		// Move Keyboard
 		static const FName MOVE_UP;

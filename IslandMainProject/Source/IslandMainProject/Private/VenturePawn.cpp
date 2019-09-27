@@ -1,6 +1,7 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
 #include "Public/VenturePawn.h"
+#include "Public/Constants/GameInputConstants.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DecalComponent.h"
@@ -97,6 +98,9 @@ void AVenturePawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputC
 	PlayerInputComponent->BindAction("Item2", IE_Pressed, this, &AVenturePawn::SwitchToItem2);
 	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AVenturePawn::OnMouseClick);
 	PlayerInputComponent->BindAction("Interact", IE_Released, this, &AVenturePawn::OnMouseRelease);
+
+	//Initialize for CameraControl Component
+	CameraControlComp->InitializeCameraComponent();
 }
 
 void AVenturePawn::MoveForward(float axis)

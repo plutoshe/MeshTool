@@ -69,6 +69,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Building System")
 	class UMaterialInterface* GetBuildNotPlaceableMaterial();
 
+	UFUNCTION(BlueprintCallable, Category = "Building System")
+	void RegisterCachedBuildingPawn(class ABuildingPawn * pawn);
+
 protected:
 	bool m_inBuildingMode;
 	
@@ -88,6 +91,4 @@ protected:
 	class ABuildingPawn* m_cachedBuildingPawn;
 
 	virtual void BeginPlay() override;
-
-
 };

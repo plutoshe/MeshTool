@@ -10,6 +10,7 @@
 
 // Misc
 const FName GameInputConstants::CONFIRM = FName("Confirm");
+const FName GameInputConstants::CHANGE_GAME_MODE = FName("ChangeGameMode");
 
 // Build Move Keyboard
 const FName GameInputConstants::MOVE_UP = FName("MoveUp");

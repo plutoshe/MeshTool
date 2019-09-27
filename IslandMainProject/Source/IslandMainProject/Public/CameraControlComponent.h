@@ -19,6 +19,9 @@ public:
 	// Sets default values for this component's properties
 	UCameraControlComponent();
 
+	UFUNCTION(BlueprintCallable)
+		virtual void InitializeCameraComponent();
+
 protected:
 	// Get owner's actor
 	AActor* m_owner;

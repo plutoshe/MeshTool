@@ -16,11 +16,8 @@ UCameraControlComponent::UCameraControlComponent()
 }
 
 
-// Called when the game starts
-void UCameraControlComponent::BeginPlay()
+void UCameraControlComponent::InitializeCameraComponent()
 {
-	Super::BeginPlay();
-
 	// Set the properties for camera components
 	GetOwnersCameraComponents();
 	SetCamerasProperties();
@@ -30,10 +27,23 @@ void UCameraControlComponent::BeginPlay()
 	m_owner->InputComponent->BindAction("RotateCameraCC", IE_Pressed, this, &UCameraControlComponent::RotateCamera90CounterClockwise);
 */
 
-	APawn* pawn = Cast<APawn>(m_owner);
-	m_owner->InputComponent->BindAxis("LookUp");
-	m_owner->InputComponent->BindAxis("LookRight");
-	m_owner->InputComponent->BindAxis("ZoomIn");
+		APawn* pawn = Cast<APawn>(m_owner);
+		m_owner->InputComponent->BindAxis("LookUp");
+		m_owner->InputComponent->BindAxis("LookRight");
+		m_owner->InputComponent->BindAxis("ZoomIn");
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("There is an pawn doesn't get controller"));
+	}
+}
+
+// Called when the game starts
+void UCameraControlComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	InitializeCameraComponent();
 }
 
 void UCameraControlComponent::GetOwnersCameraComponents()
@@ -68,7 +78,7 @@ void UCameraControlComponent::SetCamerasProperties()
 	// Create a camera boom...
 	m_ownersCameraBoom->bAbsoluteRotation = true; // Don't want arm to rotate when character does
 	m_ownersCameraBoom->TargetArmLength = 800.f;
-	m_ownersCameraBoom->RelativeRotation = FRotator(-45.0f, 0.f, 0.f);
+	//m_ownersCameraBoom->RelativeRotation = FRotator(-45.0f, 0.f, 0.f);
 	m_ownersCameraBoom->RelativeLocation = FVector(0.0f, 0.f, 0.f);
 	m_ownersCameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
 	m_ownersCameraBoom->bUsePawnControlRotation = false;

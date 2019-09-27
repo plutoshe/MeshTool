@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "Public/Building/Pawns/BuildingPawn.h"
 #include "Public/Building/Actors/Building.h"
 #include "Public/Building/Actors/BuildingPiece.h"
@@ -8,6 +7,7 @@
 #include "Engine/Classes/GameFramework/Pawn.h"
 #include "Engine/Classes/GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Public/CameraControlComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Public/Constants/GameInputConstants.h"
 #include "IslandMainProjectGameModeBase.h"
@@ -32,6 +32,9 @@ ABuildingPawn::ABuildingPawn()
 	// Primary Camera
 	this->PrimaryCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("PrimaryCameraComponent"));
 	this->PrimaryCameraComponent->SetupAttachment(this->PrimaryCameraBoom);
+
+	// Camera Control Comp
+	this->CameraControlComp = CreateDefaultSubobject<UCameraControlComponent>(TEXT("CameraControlComp"));
 }
 
 // Called when the game starts or when spawned
@@ -60,14 +63,20 @@ void ABuildingPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_LEFT, IE_Pressed, this, &ABuildingPawn::MovePieceXNeg);
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_RIGHT, IE_Pressed, this, &ABuildingPawn::MovePieceXPos);
 
-	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DOWN, IE_Pressed, this, &ABuildingPawn::MovePieceYNeg);
-	PlayerInputComponent->BindAction(GameInputConstants::MOVE_UP, IE_Pressed, this, &ABuildingPawn::MovePieceYPos);
+	PlayerInputComponent->BindAction(GameInputConstants::MOVE_UP, IE_Pressed, this, &ABuildingPawn::MovePieceYNeg);
+	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DOWN, IE_Pressed, this, &ABuildingPawn::MovePieceYPos);
 
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_DESCEND, IE_Pressed, this, &ABuildingPawn::MovePieceZNeg);
 	PlayerInputComponent->BindAction(GameInputConstants::MOVE_ASCEND, IE_Pressed, this, &ABuildingPawn::MovePieceZPos);
 
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_LEFT, IE_Pressed, this, &ABuildingPawn::CyclePieceLeft);
 	PlayerInputComponent->BindAction(GameInputConstants::CYCLE_PIECE_RIGHT, IE_Pressed, this, &ABuildingPawn::CyclePieceRight);
+
+	CameraControlComp->InitializeCameraComponent();
+
+	if (Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode()))
+		m_gameMode = Cast<AIslandMainProjectGameModeBase>(GetWorld()->GetAuthGameMode());
+	PlayerInputComponent->BindAction(GameInputConstants::CHANGE_GAME_MODE, IE_Pressed, m_gameMode, &AIslandMainProjectGameModeBase::GoToExploreMode);
 }
 
 void ABuildingPawn::SetTargetBuildingAndInitialize(ABuilding* targetBuilding)
