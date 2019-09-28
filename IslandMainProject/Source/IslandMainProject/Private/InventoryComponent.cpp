@@ -14,7 +14,7 @@ UInventoryComponent::UInventoryComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	m_slotCount = 10;
-	InitlizeInventory();
+
 }
 
 
@@ -22,7 +22,7 @@ UInventoryComponent::UInventoryComponent()
 void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	InitlizeInventory();
 	// ...
 
 }
@@ -39,8 +39,11 @@ void UInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 void UInventoryComponent::InitlizeInventory()
 {
 	// Initialize a certain size of list
-	LoadInventoryData();
-
+	//LoadInventoryData();
+	for (auto it = InitialItemList.begin(); it != InitialItemList.end(); ++it)
+	{
+		AddItem((*it).ItemID, (*it).Value);
+	}
 }
 
 
@@ -149,17 +152,38 @@ void UInventoryComponent::ThrowItem(FName itemID, int amount)
 
 				spawnActor->AddImpulseToOverlapComp((GetOwner()->GetActorForwardVector() + GetOwner()->GetActorUpVector()).GetSafeNormal(), 500.f);
 				spawnActor->Amount = ReduceItemAmount(itemID, amount);
-			
+
 			}
-	
+
 		}
 	}
 
 }
 
+void UInventoryComponent::ThrowAllItems()
+{
+	for (auto it = m_inventory.begin(); it != m_inventory.end(); ++it)
+	{
+		TSubclassOf<APickUpBase> spawnedClass = (*it).ItemPickUp;
+		if (spawnedClass) {
+			FActorSpawnParameters spawnPara;
+			spawnPara.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			APickUpBase* spawnActor = GetWorld()->SpawnActor<APickUpBase>(spawnedClass, GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 30.f, FRotator::ZeroRotator, spawnPara);
+			spawnActor->AddImpulseToOverlapComp((GetOwner()->GetActorForwardVector() + GetOwner()->GetActorUpVector() + GetOwner()->GetActorRightVector() * FMath::RandRange(-1,1)).GetSafeNormal(), 500.f);
+		}
+	}
+	ClearAllItems();
+}
+
 void UInventoryComponent::ClearAllItems()
 {
-
+	for (auto it = m_inventory.begin(); it != m_inventory.end(); ++it)
+	{
+		(*it).ClearItem();
+		break;
+	}
+	OnUpdateHUD.Broadcast();
 }
 
 

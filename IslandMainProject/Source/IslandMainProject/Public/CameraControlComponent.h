@@ -19,6 +19,9 @@ public:
 	// Sets default values for this component's properties
 	UCameraControlComponent();
 
+	UFUNCTION(BlueprintCallable)
+		virtual void InitializeCameraComponent();
+
 protected:
 	// Get owner's actor
 	AActor* m_owner;
@@ -29,7 +32,7 @@ protected:
 
 	// Temp value
 	FRotator m_destRotator;
-	bool m_bRotating;
+/*	bool m_bRotating;*/
 
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -40,11 +43,13 @@ protected:
 	UFUNCTION(BlueprintCallable)
 		virtual void SetCamerasProperties();
 
+/*
 	UFUNCTION(BlueprintCallable)
 		void RotateCamera90Clockwise();
 
 	UFUNCTION(BlueprintCallable)
 		void RotateCamera90CounterClockwise();
+*/
 
 	UFUNCTION(BlueprintCallable)
 		void PerformCameraRotation(float deltaSeconds);

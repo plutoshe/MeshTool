@@ -3,6 +3,7 @@
 
 #include "IslandMainProjectGameModeBase.h"
 #include "Public/VenturePawn.h"
+#include "Public/CameraControlComponent.h"
 #include "Public/InventoryComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
@@ -30,27 +31,31 @@ void AIslandMainProjectGameModeBase::GoToExploreMode()
 		}
 
 		APlayerController* controller = GetWorld()->GetFirstPlayerController();
+		controller->SetViewTargetWithBlend(this->m_cachedVenturePawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
 		controller->UnPossess();
+		//controller->SetViewTargetWithBlend(this->m_cachedVenturePawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
 		controller->Possess(this->m_cachedVenturePawn);
 
 		UE_LOG(LogTemp, Log, TEXT("Go to Exploration Mode"));
 	}
 }
 
-void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding* targetBuilding)
+void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding * targetBuilding)
 {
-	if (this->m_CurrentMode != EModeEnum::ME_Building) {
+	if (this->m_CurrentMode != EModeEnum::ME_Building)
+	{
 
 		if (!targetBuilding)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Could not switch to Building Mode. Building Target Null"));
 			return;
 		}
-		
-		if (this->m_cachedBuildingPawn == nullptr) {
+
+		if (this->m_cachedBuildingPawn == nullptr)
+		{
 			FVector location = targetBuilding->GetActorLocation();
 			FActorSpawnParameters spawnInfo;
-			this->m_cachedBuildingPawn = GetWorld()->SpawnActor<ABuildingPawn>(m_buildingPawnClass,location, FRotator::ZeroRotator, spawnInfo);
+			this->m_cachedBuildingPawn = GetWorld()->SpawnActor<ABuildingPawn>(m_buildingPawnClass, location, FRotator::ZeroRotator, spawnInfo);
 		}
 
 		if (!this->m_cachedBuildingPawn)
@@ -58,11 +63,12 @@ void AIslandMainProjectGameModeBase::GoToBuildingMode(ABuilding* targetBuilding)
 			UE_LOG(LogTemp, Error, TEXT("Could not switch to Building Mode. Building Pawn NULL"));
 			return;
 		}
-		
-		if(this->m_cachedBuildingPawn && targetBuilding)
+
+		if (this->m_cachedBuildingPawn && targetBuilding)
 		{
 			APlayerController* controller = GetWorld()->GetFirstPlayerController();
 			controller->UnPossess();
+			//controller->SetViewTargetWithBlend(this->m_cachedBuildingPawn, 2.0f, EViewTargetBlendFunction::VTBlend_Linear, 0, false);
 			controller->Possess(this->m_cachedBuildingPawn);
 
 			this->m_cachedBuildingPawn->SetTargetBuildingAndInitialize(targetBuilding);
@@ -146,13 +152,19 @@ class UMaterialInterface* AIslandMainProjectGameModeBase::GetBuildNotPlaceableMa
 	return this->m_materialBuildNotPlaceable;
 }
 
+void AIslandMainProjectGameModeBase::RegisterCachedBuildingPawn(ABuildingPawn * pawn)
+{
+	m_cachedBuildingPawn = pawn;
+}
+
 void AIslandMainProjectGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	m_CurrentMode = EModeEnum::ME_Exploration;
 
 	m_cachedVenturePawn = Cast<AVenturePawn>(GetWorld()->GetFirstPlayerController()->GetPawn());
 
 	// TODO Remove?
 	//if (!FindBuildingManager()) UE_LOG(LogTemp, Warning, TEXT("No Building Manager Found"));
-
 }
