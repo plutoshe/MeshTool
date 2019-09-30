@@ -41,12 +41,14 @@ void AAMeshGenerator::PostLoad()
 	CreateTriangle();
 }
 
-void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh)
+void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_transform)
 {
+	if (i_addMesh == nullptr)
+	{
+		return;
+	}
 	int existingMeshNum = mesh->GetNumSections();
-	
-
-
+	//UE_LOG(LogTemp, Log, TEXT("%s"), *(i_transform.GetTranslation().ToString()));
 	for (int i = 0; i < i_addMesh->GetNumSections(); i++)
 	{
 		TArray<FVector> vertices;
@@ -63,7 +65,7 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh)
 		vertexColors.Empty();
 		for (int j = 0; j < i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer.Num(); j++)
 		{
-			vertices.Add(i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer[j].Position);
+			vertices.Add(i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer[j].Position + i_transform.GetLocation());
 			tangents.Add(i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer[j].Tangent);
 			normals.Add(i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer[j].Normal);
 			UV0.Add(i_addMesh->GetProcMeshSection(i)->ProcVertexBuffer[j].UV0);
