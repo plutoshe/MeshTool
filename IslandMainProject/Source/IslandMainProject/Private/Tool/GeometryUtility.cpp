@@ -10,18 +10,34 @@ GeometryUtility::GeometryUtility()
 GeometryUtility::~GeometryUtility()
 {
 }
-
-bool GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_v1, FVector i_v2)
+// 1 means in
+// 2 means on the line
+// view point situation as line situation
+int GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_v1, FVector i_v2)
 {
 	FVector lineA = i_v1 - i_v0;
 	FVector lineB = i_v2 - i_v0;
-	float paramA = (i_point.X * lineB.Y - i_point.Y * lineA.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
-	float paramB = (i_point.X - lineA.X * paramA) / lineB.X;
-	if (paramA > 0 && paramA < 1 && paramB > 0 && paramB < 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	i_point -= i_v0;
+	float paramA = (i_point.X * lineB.Y - i_point.Y * lineB.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
+	float paramB;
+	if (lineB.X != 0)
 	{
-		return true;
+		paramB = (i_point.X - lineA.X * paramA) / lineB.X;
 	}
-	return false;
+	else
+	{
+		paramB = (i_point.Y - lineA.Y * paramA) / lineB.Y;
+	}
+	
+	if (paramA > 0 &&  paramB > 0 && paramA + paramB < 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	{
+		return 1;
+	}
+	if (paramA >= 0 && paramB >= 0 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	{
+		return 2;
+	}
+	return 0;
 }
 
 bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSection& i_mesh)
@@ -33,31 +49,35 @@ bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSecti
 		maxZ = FMath::Max(maxZ, i_mesh.ProcVertexBuffer[i].Position.Z);
 		minZ = FMath::Min(minZ, i_mesh.ProcVertexBuffer[i].Position.Z);
 	}
-	FVector src(i_vertex.X, i_vertex.Y, minZ);
-	FVector dst(i_vertex.X, i_vertex.Y, maxZ);
+	FVector src(i_vertex.X, i_vertex.Y, i_vertex.Z);
+	FVector dst(i_vertex.X, i_vertex.Y, maxZ + 1);
 	FVector distLine = dst - src;
 	int intersectFace = 0;
-	for (int i = 0; i < i_mesh.ProcIndexBuffer.Num(); i++)
+	int intersectLine = 0;
+	for (int i = 0; i < i_mesh.ProcIndexBuffer.Num() - 2; i+=3)
 	{
-		if (i % 3 == 2)
+		FVector v0 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i]].Position;
+		FVector v1 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 1]].Position;
+		FVector v2 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 2]].Position;
+		FVector normal = FVector::CrossProduct(v1 - v0, v2 - v0);
+		normal.Normalize();
+		float distSrc = FVector::DotProduct(src - v0, normal);
+		float distDst = FVector::DotProduct(dst - v0, normal);
+		if (!(distSrc > 0 && distDst > 0 || distSrc < 0 && distDst < 0))
 		{
-			FVector v0 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[0]].Position;
-			FVector v1 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[1]].Position;
-			FVector v2 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[2]].Position;
-			FVector normal = FVector::CrossProduct(v1 - v0, v2 - v0);
-			float distSrc = FVector::DotProduct(src - v0, normal);
-			float distDst = FVector::DotProduct(dst - v0, normal);
-			if (!(distSrc > 0 && distDst > 0 || distSrc < 0 && distDst < 0))
+			FVector intersection = src + distLine * (-distSrc / (distDst - distSrc));
+			int inFaceResult = IsPointInTriangle(intersection, v0, v1, v2);
+			switch (inFaceResult)
 			{
-				FVector intersection = src + distLine * (-distSrc / (distDst - distSrc));
-				if (IsPointInTriangle(intersection, v0, v1, v2))
-				{
-					intersectFace++;
-				}
+			case 1: intersectFace++; break;
+			case 2: intersectLine++; break;
+			default:
+				break;
 			}
+
 		}
 	}
-	return intersectFace % 2 == 1;
+	return (intersectLine / 2 + intersectFace) % 2 == 1;
 }
 
 void GeometryUtility::TraingleIntersectPolyhedron(
@@ -118,23 +138,19 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			o_result.ProcVertexBuffer.Add(i_a.ProcVertexBuffer[i]);
 			filteringVerticesNum++;
 		}
-
-		o_result.ProcVertexBuffer.Add(addedVertices[i]);
 	}
 
 	// fliter face that in the polyhedron
 	bool isInMesh = false;
-	for (int i = 0; i < addedIndices.Num(); i++)
+	for (int i = 0; i < addedIndices.Num()-2; i+=3)
 	{
-		isInMesh = isInMesh || verticesStatus[i_a.ProcIndexBuffer[i]];
-		if (i % 3 == 2) {
-			if (!isInMesh)
-			{
-				o_result.ProcIndexBuffer.Add(addedIndices[i]);
-				o_result.ProcIndexBuffer.Add(addedIndices[i - 1]);
-				o_result.ProcIndexBuffer.Add(addedIndices[i - 2]);
-			}
-			isInMesh = false;
+		isInMesh = verticesStatus[addedIndices[i]] || verticesStatus[addedIndices[i + 1]] || verticesStatus[addedIndices[i + 2]];
+		
+		if (!isInMesh)
+		{
+			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i]]);
+			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 1]]);
+			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 2]]);
 		}
 	}
 }
