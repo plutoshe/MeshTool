@@ -18,24 +18,46 @@ int GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_
 	FVector lineA = i_v1 - i_v0;
 	FVector lineB = i_v2 - i_v0;
 	i_point -= i_v0;
-	float paramA = (i_point.X * lineB.Y - i_point.Y * lineB.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
+	float paramA;
+	if (lineA.X * lineB.Y - lineA.Y * lineB.X != 0)
+	{
+		paramA = (i_point.X * lineB.Y - i_point.Y * lineB.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
+	}
+	else if ((lineA.X * lineB.Z - lineA.Z * lineB.X) != 0)
+	{
+		paramA = (i_point.X * lineB.Z - i_point.Z * lineB.X) / (lineA.X * lineB.Z - lineA.Z * lineB.X);
+	}
+	else
+	{
+		paramA = (i_point.Y * lineB.Z - i_point.Z * lineB.Y) / (lineA.Y * lineB.Z - lineA.Z * lineB.Y);
+	}
 	float paramB;
 	if (lineB.X != 0)
 	{
 		paramB = (i_point.X - lineA.X * paramA) / lineB.X;
 	}
-	else
+	else if (lineB.Y != 0)
 	{
 		paramB = (i_point.Y - lineA.Y * paramA) / lineB.Y;
+	}
+	else
+	{
+		paramB = (i_point.Z - lineA.Z * paramA) / lineB.Z;
 	}
 	
 	if (paramA > 0 &&  paramB > 0 && paramA + paramB < 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
 	{
 		return 1;
 	}
-	if (paramA >= 0 && paramB >= 0 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	// include situations on lines
+	if (paramA + paramB > 0 && paramA >= 0 && paramB >= 0 && paramA < 1 && paramB < 1 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
 	{
 		return 2;
+	}
+	// include situations on points
+	if (paramA >= 0 && paramB >= 0 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	{
+		return 3;
 	}
 	return 0;
 }
@@ -70,7 +92,8 @@ bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSecti
 			switch (inFaceResult)
 			{
 			case 1: intersectFace++; break;
-			case 2: intersectLine++; break;
+			case 2: case 3: // currently ignore converge at one point
+				intersectLine++; break;
 			default:
 				break;
 			}
@@ -80,14 +103,173 @@ bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSecti
 	return (intersectLine / 2 + intersectFace) % 2 == 1;
 }
 
+bool GeometryUtility::GetLineAndPlaneIntersectionPoint(const FVector& i_va, const FVector& i_vb, const FVector& i_normal, FVector &o_intersection)
+{
+	float distA = FVector::DotProduct(i_va, i_normal) / i_normal.Size();
+	float distB = FVector::DotProduct(i_vb, i_normal) / i_normal.Size();
+	// currently ignore the situation that point on the plane
+	
+	if (distA > 0 && distB < 0 || distA < 0 && distB > 0)
+	{
+		o_intersection = i_va + (i_vb - i_va) * (-distA) / (distB - distA);
+		return true;
+	}
+	// TO-DO:
+	// two more sitautions:
+	// one point on the plane
+	// two point on the plane
+	return false;
+}
+
+bool GeometryUtility::GetLineAndLineIntersectionPoint(const FVector& i_va, const FVector& i_vb, const FVector& i_linea, const FVector& i_lineb, FVector &o_intersection)
+{
+	FVector line = i_lineb - i_linea;
+	FVector sa = i_va - i_linea;
+	FVector sb = i_vb - i_linea;
+	FVector perp = sa - FVector::DotProduct(sa, line) / line.Size() / line.Size() * line;
+	perp.Normalize();
+	float da = FVector::DotProduct(sa, perp);
+	float db = FVector::DotProduct(sb, perp);
+	FVector intersection = (sa + (-da) / (db - da) * (sb - sa));
+	if ((da >= 0 && db <= 0 || da <= 0 && db >= 0) && (da + db != 0) && intersection.Size() <= line.Size())
+	{
+		o_intersection = i_linea + intersection;
+
+		return true;
+	}
+	return false;
+}
+
 void GeometryUtility::TraingleIntersectPolyhedron(
 	TArray<FVector> i_vertices, 
 	TArray<uint32> i_indices, 
 	const FProcMeshSection& i_b, 
-	TArray<FProcMeshVertex>& o_generateVertices, 
+	TArray<FVector>& o_generateVertices,
 	TArray<uint32>& o_generateIndices)
 {
+	if (i_vertices.Num() < 3)
+	{
+		return;
+	}
+	o_generateVertices = i_vertices;
+	o_generateIndices = i_indices;
+	FVector ova = i_vertices[0];
+	FVector ovb = i_vertices[1];
+	FVector ovc = i_vertices[2];
+	FVector currentNormal = FVector::CrossProduct(ovc - ova, ovb - ova);
+	FVector intersection;
+	TArray<FVector> planeIntersections;
+	TArray<FVector> lineIntersections;
+	TArray<FVector> partitionPoints;
+	for (int i = 0; i + 2 < i_b.ProcIndexBuffer.Num(); i+=3)
+	{
+		FProcMeshVertex va = i_b.ProcVertexBuffer[i_b.ProcIndexBuffer[i]];
+		FProcMeshVertex vb = i_b.ProcVertexBuffer[i_b.ProcIndexBuffer[i + 1]];
+		FProcMeshVertex vc = i_b.ProcVertexBuffer[i_b.ProcIndexBuffer[i + 2]];
+		planeIntersections.Empty();
+		lineIntersections.Empty();
+		partitionPoints.Empty();
+		if (GetLineAndPlaneIntersectionPoint(va.Position - ova, vb.Position - ova, currentNormal, intersection))
+		{
+			planeIntersections.Add(intersection + ova);
+		}
+		if (GetLineAndPlaneIntersectionPoint(vb.Position - ova, vc.Position - ova, currentNormal, intersection))
+		{
+			planeIntersections.Add(intersection + ova);
+		}
+		if (GetLineAndPlaneIntersectionPoint(va.Position - ova, vc.Position - ova, currentNormal, intersection))
+		{
+			planeIntersections.Add(intersection + ova);
+		}
+		if (planeIntersections.Num() > 0)
+		{
+			if (planeIntersections.Num() == 2) // currently only tackle line situation
+			{
+				// if two point all in the triangle(even on the edges)
+				for (int p_i = 0; p_i < planeIntersections.Num(); p_i++) {
+					if (IsPointInTriangle(planeIntersections[p_i], ova, ovb, ovc) > 0)
+					{
+						partitionPoints.Add(planeIntersections[p_i]);
+					}
+				}
+				if (partitionPoints.Num() < planeIntersections.Num())
+				{
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovb, ova, intersection))
+					{
+						partitionPoints.Add(intersection);
+					}
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovc, ova, intersection))
+					{
+						partitionPoints.Add(intersection);
+					}
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovc, ovb, intersection))
+					{
+						partitionPoints.Add(intersection);
+					}
+				}
 
+				for (int partitionID = 0; partitionID < partitionPoints.Num(); partitionID++)
+				{
+					bool exist = false;
+					uint32 currentVertexID = o_generateVertices.Num();
+					for (int j = 0; j < o_generateIndices.Num() - 2; j += 3)
+					{
+						auto result = IsPointInTriangle(partitionPoints[partitionID],
+							o_generateVertices[o_generateIndices[j]],
+							o_generateVertices[o_generateIndices[j + 1]],
+							o_generateVertices[o_generateIndices[j + 2]]);
+						if (result > 0 && result < 3)
+						{
+							exist = true;
+							uint32 ia = o_generateIndices[j];
+							uint32 ib = o_generateIndices[j + 1];
+							uint32 ic = o_generateIndices[j + 2];
+							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ia], o_generateVertices[ib]))
+							{
+								o_generateIndices.Add(ia);
+								o_generateIndices.Add(ib);
+								o_generateIndices.Add(currentVertexID);
+							}
+							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ic], o_generateVertices[ia]))
+							{
+								o_generateIndices.Add(ic);
+								o_generateIndices.Add(ia);
+								o_generateIndices.Add(currentVertexID);
+							}
+							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ib], o_generateVertices[ic]))
+							{
+								o_generateIndices.Add(ib);
+								o_generateIndices.Add(ic);
+								o_generateIndices.Add(currentVertexID);
+							}
+							o_generateIndices.RemoveAt(j, 3);
+							break;
+						}
+					}
+					if (exist)
+					{
+						o_generateVertices.Add(partitionPoints[partitionID]);
+					}
+				}
+			}
+		}
+	}
+}
+
+bool GeometryUtility::IsPointOnLineSegment(const FVector &i_point, const FVector &i_v0, const FVector &i_v1)
+{
+	FVector lineA = i_point - i_v0;
+	FVector standard = i_v1 - i_v0;
+	if (lineA.Size() <= standard.Size())
+	{
+		lineA.Normalize();
+		standard.Normalize();
+		if (lineA == standard)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result)
@@ -109,22 +291,52 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		verticesStatus.Add(IsPointInPolyhedron(i_a.ProcVertexBuffer[i].Position, i_b));
 		addedVertices.Add(i_a.ProcVertexBuffer[i]);
 	}
-	for (int i = 0; i < i_a.ProcIndexBuffer.Num(); i++)
-	{
-		addedIndices.Add(i_a.ProcIndexBuffer[i]);
-	}
+	//for (int i = 0; i < i_a.ProcIndexBuffer.Num(); i++)
+	//{
+	//	addedIndices.Add(i_a.ProcIndexBuffer[i]);
+	//}
 
 	// generate intersection faces
 	TArray<FVector> triangleVerticesArray;
-	TArray<uint32> triangleIndicesArray;
-	triangleVerticesArray.Init(FVector(0,0,0), 3);
+	TArray<uint32> triangleIndicesArray, triangleNewIndicesArray;
+	triangleVerticesArray.Init(FVector(0, 0, 0), 3);
 	triangleIndicesArray.Init(0, 3);
-	for (int i = 0; i < i_a.ProcIndexBuffer.Num(); i++)
+	triangleNewIndicesArray.Init(0, 3);
+	for (int i = 0; i < i_a.ProcIndexBuffer.Num() - 2; i += 3)
 	{
-		triangleIndicesArray[i % 3] = i_a.ProcIndexBuffer[i];
-		triangleVerticesArray[i % 3] = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i]].Position;
-		if (i % 3 == 2) {
-			TraingleIntersectPolyhedron(triangleVerticesArray, triangleIndicesArray, i_b, addedVertices, addedIndices);
+		for (int j = 0; j < 3; j++)
+		{
+			triangleIndicesArray[j] = i_a.ProcIndexBuffer[i + j];
+			triangleVerticesArray[j] = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i + j]].Position;
+			triangleNewIndicesArray[j] = j;
+		}
+		TArray<uint32> additionIndices = triangleNewIndicesArray;
+		TArray<FVector> additionVertices = triangleVerticesArray;
+		if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]]) // if the triangle intersect the polythedreon
+		{
+			TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices);
+		}
+		int offset = addedVertices.Num();
+		for (int a_i = 0; a_i < additionIndices.Num(); a_i++)
+		{
+			if (additionIndices[a_i] > 2)
+			{
+				// ignore first 3 point of initial triangle, becuase they are already be included.
+				addedIndices.Add(additionIndices[a_i] + offset - 3);
+			}
+			else
+			{
+				addedIndices.Add(triangleIndicesArray[additionIndices[a_i]]);
+			}
+		}
+		for (int a_i = 3; a_i < additionVertices.Num(); a_i++)
+		{
+			auto newProcMeshVertex = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i]];
+			newProcMeshVertex.Position = additionVertices[a_i];
+			// TODO: set new vertex UV
+			//newProcMeshVertex.UV0 = ;
+			addedVertices.Add(newProcMeshVertex);
+
 		}
 	}
 	indexConvdersion.Init(0, addedVertices.Num());
@@ -135,17 +347,31 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		indexConvdersion[i] = filteringVerticesNum;
 		if (i >= i_a.ProcVertexBuffer.Num() || !verticesStatus[i])
 		{
-			o_result.ProcVertexBuffer.Add(i_a.ProcVertexBuffer[i]);
+			o_result.ProcVertexBuffer.Add(addedVertices[i]);
 			filteringVerticesNum++;
 		}
 	}
-
-	// fliter face that in the polyhedron
+	for (int i = 0; i < addedIndices.Num() - 2; i += 3)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s %s %s"),
+			*addedVertices[addedIndices[i]].Position.ToString(),
+			*addedVertices[addedIndices[i + 1]].Position.ToString(),
+			*addedVertices[addedIndices[i + 2]].Position.ToString());
+	}
+	// fliter face that is in the polyhedron or face that intersects two polyhedrons
+	// currently only filter faces that are in the polyhedron
+	// TODO: faces intersecting polyhedrons
 	bool isInMesh = false;
 	for (int i = 0; i < addedIndices.Num()-2; i+=3)
 	{
-		isInMesh = verticesStatus[addedIndices[i]] || verticesStatus[addedIndices[i + 1]] || verticesStatus[addedIndices[i + 2]];
-		
+		isInMesh = false;
+		for (int j = 0; j < 3; j++)
+		{
+			if (addedIndices[i + j] < (uint32)i_a.ProcVertexBuffer.Num())
+			{
+				isInMesh = isInMesh || verticesStatus[addedIndices[i + j]];
+			}
+		}
 		if (!isInMesh)
 		{
 			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i]]);
@@ -153,4 +379,5 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 2]]);
 		}
 	}
+	return;
 }
