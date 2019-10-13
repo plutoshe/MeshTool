@@ -10,6 +10,22 @@ GeometryUtility::GeometryUtility()
 GeometryUtility::~GeometryUtility()
 {
 }
+const double eps_const = 1e-4;
+int eps(double a, double b)
+{
+	double gap = a - b;
+	if (gap > eps_const)
+	{
+		return 1;
+	}
+	else if (gap < -eps_const)
+	{
+		return -1;
+	}
+	return 0;
+	
+}
+
 // 1 means in
 // 2 means on the line
 // view point situation as line situation
@@ -45,17 +61,17 @@ int GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_
 		paramB = (i_point.Z - lineA.Z * paramA) / lineB.Z;
 	}
 	
-	if (paramA > 0 &&  paramB > 0 && paramA + paramB < 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	if (eps(paramA, 0) > 0 &&  eps(paramB, 0) > 0 && eps(paramA + paramB, 1) < 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
 	{
 		return 1;
 	}
 	// include situations on lines
-	if (paramA + paramB > 0 && paramA >= 0 && paramB >= 0 && paramA < 1 && paramB < 1 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	if (eps(paramA + paramB, 0) > 0 && eps(paramA, 0) >= 0 && eps(paramB, 0) >= 0 && eps(paramA, 1) < 0 && eps(paramB, 1) < 0 && eps(paramB + paramA, 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
 	{
 		return 2;
 	}
 	// include situations on points
-	if (paramA >= 0 && paramB >= 0 && paramB + paramA <= 1 && paramA * lineA.Z + paramB * lineB.Z == i_point.Z)
+	if (eps(paramA, 0) >= 0 && eps(paramB, 0) >= 0 && eps(paramB + paramA, 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
 	{
 		return 3;
 	}
