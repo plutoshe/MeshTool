@@ -146,7 +146,8 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	TArray<uint32> i_indices, 
 	const FProcMeshSection& i_b, 
 	TArray<DVector>& o_generateVertices,
-	TArray<uint32>& o_generateIndices)
+	TArray<uint32>& o_generateIndices, 
+	TArray<int>& t_planeBStatus)
 {
 	if (i_vertices.Num() < 3)
 	{
@@ -208,7 +209,10 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 						partitionPoints.Add(intersection);
 					}
 				}
-
+				if (partitionPoints.Num() > 0 && t_planeBStatus[i / 3] != 1)
+				{
+					t_planeBStatus[i / 3] = 2;
+				}
 				for (int partitionID = 0; partitionID < partitionPoints.Num(); partitionID++)
 				{
 					bool exist = false;
@@ -273,29 +277,41 @@ bool GeometryUtility::IsPointOnLineSegment(const DVector &i_point, const DVector
 	return false;
 }
 
-void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result)
+void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<int> &t_planeAStatus, TArray<int> &t_planeBStatus, int phase)
 {
 	// Decide all vertices status for pointed mesh section
 	TArray<bool> verticesStatus;
 	TArray<uint32> indexConvdersion;
 	TArray<FProcMeshVertex> addedVertices;
 	TArray<uint32> addedIndices;
-	o_result.ProcVertexBuffer.Empty();
-	o_result.ProcIndexBuffer.Empty();
 	verticesStatus.Empty();
 	addedVertices.Empty();
 	addedIndices.Empty();
-
 	// initialization
 	for (int i = 0; i < i_a.ProcVertexBuffer.Num(); i++)
 	{
 		verticesStatus.Add(IsPointInPolyhedron(i_a.ProcVertexBuffer[i].Position, i_b));
-		addedVertices.Add(i_a.ProcVertexBuffer[i]);
 	}
-	//for (int i = 0; i < i_a.ProcIndexBuffer.Num(); i++)
-	//{
-	//	addedIndices.Add(i_a.ProcIndexBuffer[i]);
-	//}
+	if (phase == 0)
+	{
+		for (int i = 0; i < i_a.ProcVertexBuffer.Num(); i++)
+		{
+			addedVertices.Add(i_a.ProcVertexBuffer[i]);
+		}
+	}
+	else if (phase == 1)
+	{
+		for (int i = 0; i < o_result.ProcVertexBuffer.Num(); i++)
+		{
+			addedVertices.Add(o_result.ProcVertexBuffer[i]);
+		}
+		for (int i = 0; i < o_result.ProcIndexBuffer.Num(); i++)
+		{
+			addedIndices.Add(o_result.ProcIndexBuffer[i]);
+		}
+	}
+	o_result.ProcVertexBuffer.Empty();
+	o_result.ProcIndexBuffer.Empty();
 
 	// generate intersection faces
 	TArray<DVector> triangleVerticesArray;
@@ -313,71 +329,106 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		}
 		TArray<uint32> additionIndices = triangleNewIndicesArray;
 		TArray<DVector> additionVertices = triangleVerticesArray;
-		//if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]]) // if the triangle intersect the polythedreon
-		//{
-			TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices);
-		//}
-		int offset = addedVertices.Num();
-		for (int a_i = 0; a_i < additionIndices.Num(); a_i++)
+		if (phase == 0) // if the triangle intersect the polythedreon
 		{
-			if (additionIndices[a_i] > 2)
+			if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]])
 			{
-				// ignore first 3 point of initial triangle, becuase they are already be included.
-				addedIndices.Add(additionIndices[a_i] + offset - 3);
+				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus);
+				t_planeAStatus[i / 3] = 1;
 			}
 			else
 			{
-				addedIndices.Add(triangleIndicesArray[additionIndices[a_i]]);
+				if (t_planeAStatus[i / 3] != 2)
+				{
+					t_planeAStatus[i / 3] = 0;
+				}
 			}
 		}
-		for (int a_i = 3; a_i < additionVertices.Num(); a_i++)
+		if (phase == 1)
 		{
-			auto newProcMeshVertex = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i]];
-			newProcMeshVertex.Position = additionVertices[a_i].FVectorConversion();
-			// TODO: set new vertex UV
-			//newProcMeshVertex.UV0 = ;
-			addedVertices.Add(newProcMeshVertex);
+			if (t_planeAStatus[i / 3] == 2)
+			{
+				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus);
+			}
+		}
+		if (phase == 0 && t_planeAStatus[i / 3] == 1 || phase == 1 && t_planeAStatus[i / 3] != 1)
+		{
+			int offset = addedVertices.Num();
+			for (int a_i = 0; a_i < additionIndices.Num(); a_i++)
+			{
+				if (additionIndices[a_i] > 2)
+				{
+					// ignore first 3 point of initial triangle, becuase they are already be included.
+					addedIndices.Add(additionIndices[a_i] + offset - 3);
+				}
+				else
+				{
+					addedIndices.Add(triangleIndicesArray[additionIndices[a_i]]);
+				}
+			}
+			for (int a_i = 3; a_i < additionVertices.Num(); a_i++)
+			{
+				auto newProcMeshVertex = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i]];
+				newProcMeshVertex.Position = additionVertices[a_i].FVectorConversion();
+				// TODO: set new vertex UV
+				//newProcMeshVertex.UV0 = ;
+				addedVertices.Add(newProcMeshVertex);
 
+			}
 		}
 	}
-	indexConvdersion.Init(0, addedVertices.Num());
-
-	// fliter vertex that in the polyhedron
-	int filteringVerticesNum = 0;
-	for (int i = 0; i < addedVertices.Num(); i++) {
-		indexConvdersion[i] = filteringVerticesNum;
-		if (i >= i_a.ProcVertexBuffer.Num() || !verticesStatus[i])
+	if (phase == 0)
+	{
+		for (int i = 0; i < addedVertices.Num(); i++) 
 		{
 			o_result.ProcVertexBuffer.Add(addedVertices[i]);
-			filteringVerticesNum++;
+		}
+		for (int i = 0; i < addedIndices.Num(); i++)
+		{
+			o_result.ProcIndexBuffer.Add(addedIndices[i]);
 		}
 	}
-	for (int i = 0; i < addedIndices.Num() - 2; i += 3)
+	else if (phase == 1)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s %s %s"),
-			*addedVertices[addedIndices[i]].Position.ToString(),
-			*addedVertices[addedIndices[i + 1]].Position.ToString(),
-			*addedVertices[addedIndices[i + 2]].Position.ToString());
-	}
-	// fliter face that is in the polyhedron or face that intersects two polyhedrons
-	// currently only filter faces that are in the polyhedron
-	// TODO: faces intersecting polyhedrons
-	bool isInMesh = false;
-	for (int i = 0; i < addedIndices.Num()-2; i+=3)
-	{
-		isInMesh = false;
-		for (int j = 0; j < 3; j++)
-		{
-			if (addedIndices[i + j] < (uint32)i_a.ProcVertexBuffer.Num())
+		indexConvdersion.Init(0, addedVertices.Num());
+
+		// fliter vertex that in the polyhedron
+		int filteringVerticesNum = 0;
+		for (int i = 0; i < addedVertices.Num(); i++) {
+			indexConvdersion[i] = filteringVerticesNum;
+			if (i >= i_a.ProcVertexBuffer.Num() || !verticesStatus[i])
 			{
-				isInMesh = isInMesh || verticesStatus[addedIndices[i + j]];
+				o_result.ProcVertexBuffer.Add(addedVertices[i]);
+				filteringVerticesNum++;
 			}
 		}
-		if (!isInMesh)
+		for (int i = 0; i < addedIndices.Num() - 2; i += 3)
 		{
-			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i]]);
-			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 1]]);
-			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 2]]);
+			UE_LOG(LogTemp, Log, TEXT("%s %s %s"),
+				*addedVertices[addedIndices[i]].Position.ToString(),
+				*addedVertices[addedIndices[i + 1]].Position.ToString(),
+				*addedVertices[addedIndices[i + 2]].Position.ToString());
+		}
+		// fliter face that is in the polyhedron or face that intersects two polyhedrons
+		// currently only filter faces that are in the polyhedron
+		// TODO: faces intersecting polyhedrons
+		bool isInMesh = false;
+		for (int i = 0; i < addedIndices.Num() - 2; i += 3)
+		{
+			isInMesh = false;
+			for (int j = 0; j < 3; j++)
+			{
+				if (addedIndices[i + j] < (uint32)i_a.ProcVertexBuffer.Num())
+				{
+					isInMesh = isInMesh || verticesStatus[addedIndices[i + j]];
+				}
+			}
+			if (!isInMesh)
+			{
+				o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i]]);
+				o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 1]]);
+				o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i + 2]]);
+			}
 		}
 	}
 	return;

@@ -95,9 +95,14 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 	{
 		FProcMeshSection addedMesh = *(m_mesh->GetProcMeshSection(i));
 		FProcMeshSection resultA, resultB;
-		GeometryUtility::MeshSectionIntersection(addedMesh, finalMesh, resultA);
-		GeometryUtility::MeshSectionIntersection(finalMesh, addedMesh, resultB);
-
+		TArray<int> planeAStatus;
+		TArray<int> planeBStatus;
+		planeAStatus.Init(0, addedMesh.ProcIndexBuffer.Num() / 3);
+		planeBStatus.Init(0, finalMesh.ProcIndexBuffer.Num() / 3);
+		GeometryUtility::MeshSectionIntersection(addedMesh, finalMesh, resultA, planeAStatus, planeBStatus, 0);
+		GeometryUtility::MeshSectionIntersection(finalMesh, addedMesh, resultB, planeBStatus, planeAStatus, 0);
+		GeometryUtility::MeshSectionIntersection(addedMesh, finalMesh, resultA, planeAStatus, planeBStatus, 1);
+		GeometryUtility::MeshSectionIntersection(finalMesh, addedMesh, resultB, planeBStatus, planeAStatus, 1);
 		finalMesh.ProcIndexBuffer.Empty();
 		finalMesh.ProcVertexBuffer.Empty();
 		finalMesh.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);

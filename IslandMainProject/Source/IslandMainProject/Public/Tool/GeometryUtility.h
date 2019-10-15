@@ -31,8 +31,8 @@ public:
 	static bool IsPointOnLineSegment(const DVector& i_point, const DVector& i_v0, const DVector& i_v1);
 	static int IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2);
 	static bool IsPointInPolyhedron(DVector i_vertices, const FProcMeshSection& i_mesh);
-	static void TraingleIntersectPolyhedron(TArray<DVector> i_vertex, TArray<uint32> i_indices, const FProcMeshSection& i_b, TArray<DVector> &o_generateVertices, TArray<uint32> &o_generateIndices);
-	static void MeshSectionIntersection(const FProcMeshSection &i_a, const FProcMeshSection &i_b, FProcMeshSection &o_result);
+	static void TraingleIntersectPolyhedron(TArray<DVector> i_vertex, TArray<uint32> i_indices, const FProcMeshSection& i_b, TArray<DVector> &o_generateVertices, TArray<uint32> &o_generateIndices, TArray<int>& t_planeBStatus);
+	static void MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<int>& t_planeAStatus, TArray<int>& t_planeBStatus, int phase);
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_normal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
 };
