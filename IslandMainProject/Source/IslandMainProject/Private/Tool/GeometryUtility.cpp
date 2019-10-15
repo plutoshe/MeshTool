@@ -2,7 +2,7 @@
 
 
 #include "GeometryUtility.h"
-const double GeometryUtility::eps_const = 1e-5;
+const double GeometryUtility::eps_const = 1e-4;
 GeometryUtility::GeometryUtility()
 {
 }
@@ -313,10 +313,10 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		}
 		TArray<uint32> additionIndices = triangleNewIndicesArray;
 		TArray<DVector> additionVertices = triangleVerticesArray;
-		if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]]) // if the triangle intersect the polythedreon
-		{
+		//if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]]) // if the triangle intersect the polythedreon
+		//{
 			TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices);
-		}
+		//}
 		int offset = addedVertices.Num();
 		for (int a_i = 0; a_i < additionIndices.Num(); a_i++)
 		{
