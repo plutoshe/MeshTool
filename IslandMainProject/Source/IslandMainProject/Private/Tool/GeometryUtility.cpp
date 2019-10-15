@@ -2,7 +2,7 @@
 
 
 #include "GeometryUtility.h"
-
+const double GeometryUtility::eps_const = 1e-5;
 GeometryUtility::GeometryUtility()
 {
 }
@@ -10,30 +10,15 @@ GeometryUtility::GeometryUtility()
 GeometryUtility::~GeometryUtility()
 {
 }
-const double eps_const = 1e-4;
-int eps(double a, double b)
-{
-	double gap = a - b;
-	if (gap > eps_const)
-	{
-		return 1;
-	}
-	else if (gap < -eps_const)
-	{
-		return -1;
-	}
-	return 0;
-	
-}
 
 // 1 means in
 // 2 means on the line
 // view point situation as line situation
-int GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_v1, FVector i_v2)
+int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2)
 {
-	FVector lineA = i_v1 - i_v0;
-	FVector lineB = i_v2 - i_v0;
-	i_point -= i_v0;
+	DVector lineA = i_v1 - i_v0;
+	DVector lineB = i_v2 - i_v0;
+	i_point = i_point - i_v0;
 	float paramA;
 	if (lineA.X * lineB.Y - lineA.Y * lineB.X != 0)
 	{
@@ -61,24 +46,24 @@ int GeometryUtility::IsPointInTriangle(FVector i_point, FVector i_v0, FVector i_
 		paramB = (i_point.Z - lineA.Z * paramA) / lineB.Z;
 	}
 	
-	if (eps(paramA, 0) > 0 &&  eps(paramB, 0) > 0 && eps(paramA + paramB, 1) < 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
+	if (eps(paramA - 0) > 0 &&  eps(paramB) > 0 && eps(paramA + paramB - 1) < 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
 	{
 		return 1;
 	}
 	// include situations on lines
-	if (eps(paramA + paramB, 0) > 0 && eps(paramA, 0) >= 0 && eps(paramB, 0) >= 0 && eps(paramA, 1) < 0 && eps(paramB, 1) < 0 && eps(paramB + paramA, 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
+	if (eps(paramA + paramB) > 0 && eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramA - 1) < 0 && eps(paramB - 1) < 0 && eps(paramB + paramA - 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
 	{
 		return 2;
 	}
 	// include situations on points
-	if (eps(paramA, 0) >= 0 && eps(paramB, 0) >= 0 && eps(paramB + paramA, 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z, i_point.Z) == 0)
+	if (eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramB + paramA - 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
 	{
 		return 3;
 	}
 	return 0;
 }
 
-bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSection& i_mesh)
+bool GeometryUtility::IsPointInPolyhedron(DVector i_vertex, const FProcMeshSection& i_mesh)
 {
 	float maxZ = i_mesh.ProcVertexBuffer[0].Position.Z;
 	float minZ = maxZ;
@@ -87,23 +72,23 @@ bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSecti
 		maxZ = FMath::Max(maxZ, i_mesh.ProcVertexBuffer[i].Position.Z);
 		minZ = FMath::Min(minZ, i_mesh.ProcVertexBuffer[i].Position.Z);
 	}
-	FVector src(i_vertex.X, i_vertex.Y, i_vertex.Z);
-	FVector dst(i_vertex.X, i_vertex.Y, maxZ + 1);
-	FVector distLine = dst - src;
+	DVector src(i_vertex.X, i_vertex.Y, i_vertex.Z);
+	DVector dst(i_vertex.X, i_vertex.Y, maxZ + 1);
+	DVector distLine = dst - src;
 	int intersectFace = 0;
 	int intersectLine = 0;
 	for (int i = 0; i < i_mesh.ProcIndexBuffer.Num() - 2; i+=3)
 	{
-		FVector v0 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i]].Position;
-		FVector v1 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 1]].Position;
-		FVector v2 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 2]].Position;
-		FVector normal = FVector::CrossProduct(v1 - v0, v2 - v0);
+		DVector v0 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i]].Position;
+		DVector v1 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 1]].Position;
+		DVector v2 = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[i + 2]].Position;
+		DVector normal = DVector::CrossProduct(v1 - v0, v2 - v0);
 		normal.Normalize();
-		float distSrc = FVector::DotProduct(src - v0, normal);
-		float distDst = FVector::DotProduct(dst - v0, normal);
-		if (!(distSrc > 0 && distDst > 0 || distSrc < 0 && distDst < 0))
+		float distSrc = DVector::DotProduct(src - v0, normal);
+		float distDst = DVector::DotProduct(dst - v0, normal);
+		if (!(eps(distSrc) > 0 && eps(distDst) > 0 || eps(distSrc) < 0 && eps(distDst) < 0))
 		{
-			FVector intersection = src + distLine * (-distSrc / (distDst - distSrc));
+			DVector intersection = src + distLine * (-distSrc / (distDst - distSrc));
 			int inFaceResult = IsPointInTriangle(intersection, v0, v1, v2);
 			switch (inFaceResult)
 			{
@@ -119,10 +104,10 @@ bool GeometryUtility::IsPointInPolyhedron(FVector i_vertex, const FProcMeshSecti
 	return (intersectLine / 2 + intersectFace) % 2 == 1;
 }
 
-bool GeometryUtility::GetLineAndPlaneIntersectionPoint(const FVector& i_va, const FVector& i_vb, const FVector& i_normal, FVector &o_intersection)
+bool GeometryUtility::GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_normal, DVector &o_intersection)
 {
-	float distA = FVector::DotProduct(i_va, i_normal) / i_normal.Size();
-	float distB = FVector::DotProduct(i_vb, i_normal) / i_normal.Size();
+	double distA = DVector::DotProduct(i_va, i_normal) / i_normal.Size();
+	double distB = DVector::DotProduct(i_vb, i_normal) / i_normal.Size();
 	// currently ignore the situation that point on the plane
 	
 	if (distA > 0 && distB < 0 || distA < 0 && distB > 0)
@@ -137,17 +122,17 @@ bool GeometryUtility::GetLineAndPlaneIntersectionPoint(const FVector& i_va, cons
 	return false;
 }
 
-bool GeometryUtility::GetLineAndLineIntersectionPoint(const FVector& i_va, const FVector& i_vb, const FVector& i_linea, const FVector& i_lineb, FVector &o_intersection)
+bool GeometryUtility::GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector &o_intersection)
 {
-	FVector line = i_lineb - i_linea;
-	FVector sa = i_va - i_linea;
-	FVector sb = i_vb - i_linea;
-	FVector perp = sa - FVector::DotProduct(sa, line) / line.Size() / line.Size() * line;
+	DVector line = i_lineb - i_linea;
+	DVector sa = i_va - i_linea;
+	DVector sb = i_vb - i_linea;
+	DVector perp = sa - line * (DVector::DotProduct(sa, line) / line.Size() / line.Size());
 	perp.Normalize();
-	float da = FVector::DotProduct(sa, perp);
-	float db = FVector::DotProduct(sb, perp);
-	FVector intersection = (sa + (-da) / (db - da) * (sb - sa));
-	if ((da >= 0 && db <= 0 || da <= 0 && db >= 0) && (da + db != 0) && intersection.Size() <= line.Size())
+	double da = DVector::DotProduct(sa, perp);
+	double db = DVector::DotProduct(sb, perp);
+	DVector intersection = (sa + (-da) / (db - da) * (sb - sa));
+	if ((eps(da) >= 0 && eps(db) <= 0 || eps(da) <= 0 && eps(db) >= 0) && (eps(da + db) != 0) && intersection.Size() <= line.Size())
 	{
 		o_intersection = i_linea + intersection;
 
@@ -157,10 +142,10 @@ bool GeometryUtility::GetLineAndLineIntersectionPoint(const FVector& i_va, const
 }
 
 void GeometryUtility::TraingleIntersectPolyhedron(
-	TArray<FVector> i_vertices, 
+	TArray<DVector> i_vertices, 
 	TArray<uint32> i_indices, 
 	const FProcMeshSection& i_b, 
-	TArray<FVector>& o_generateVertices,
+	TArray<DVector>& o_generateVertices,
 	TArray<uint32>& o_generateIndices)
 {
 	if (i_vertices.Num() < 3)
@@ -169,14 +154,14 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	}
 	o_generateVertices = i_vertices;
 	o_generateIndices = i_indices;
-	FVector ova = i_vertices[0];
-	FVector ovb = i_vertices[1];
-	FVector ovc = i_vertices[2];
-	FVector currentNormal = FVector::CrossProduct(ovc - ova, ovb - ova);
-	FVector intersection;
-	TArray<FVector> planeIntersections;
-	TArray<FVector> lineIntersections;
-	TArray<FVector> partitionPoints;
+	DVector ova = i_vertices[0];
+	DVector ovb = i_vertices[1];
+	DVector ovc = i_vertices[2];
+	DVector currentNormal = DVector::CrossProduct(ovc - ova, ovb - ova);
+	DVector intersection;
+	TArray<DVector> planeIntersections;
+	TArray<DVector> lineIntersections;
+	TArray<DVector> partitionPoints;
 	for (int i = 0; i + 2 < i_b.ProcIndexBuffer.Num(); i+=3)
 	{
 		FProcMeshVertex va = i_b.ProcVertexBuffer[i_b.ProcIndexBuffer[i]];
@@ -272,10 +257,10 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	}
 }
 
-bool GeometryUtility::IsPointOnLineSegment(const FVector &i_point, const FVector &i_v0, const FVector &i_v1)
+bool GeometryUtility::IsPointOnLineSegment(const DVector &i_point, const DVector &i_v0, const DVector &i_v1)
 {
-	FVector lineA = i_point - i_v0;
-	FVector standard = i_v1 - i_v0;
+	DVector lineA = i_point - i_v0;
+	DVector standard = i_v1 - i_v0;
 	if (lineA.Size() <= standard.Size())
 	{
 		lineA.Normalize();
@@ -313,9 +298,9 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	//}
 
 	// generate intersection faces
-	TArray<FVector> triangleVerticesArray;
+	TArray<DVector> triangleVerticesArray;
 	TArray<uint32> triangleIndicesArray, triangleNewIndicesArray;
-	triangleVerticesArray.Init(FVector(0, 0, 0), 3);
+	triangleVerticesArray.Init(DVector(0, 0, 0), 3);
 	triangleIndicesArray.Init(0, 3);
 	triangleNewIndicesArray.Init(0, 3);
 	for (int i = 0; i < i_a.ProcIndexBuffer.Num() - 2; i += 3)
@@ -327,7 +312,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			triangleNewIndicesArray[j] = j;
 		}
 		TArray<uint32> additionIndices = triangleNewIndicesArray;
-		TArray<FVector> additionVertices = triangleVerticesArray;
+		TArray<DVector> additionVertices = triangleVerticesArray;
 		if (verticesStatus[i_a.ProcIndexBuffer[i]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 1]] ^ verticesStatus[i_a.ProcIndexBuffer[i + 2]]) // if the triangle intersect the polythedreon
 		{
 			TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices);
@@ -348,7 +333,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		for (int a_i = 3; a_i < additionVertices.Num(); a_i++)
 		{
 			auto newProcMeshVertex = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i]];
-			newProcMeshVertex.Position = additionVertices[a_i];
+			newProcMeshVertex.Position = additionVertices[a_i].FVectorConversion();
 			// TODO: set new vertex UV
 			//newProcMeshVertex.UV0 = ;
 			addedVertices.Add(newProcMeshVertex);

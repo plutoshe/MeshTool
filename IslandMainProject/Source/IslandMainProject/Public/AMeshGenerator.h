@@ -23,7 +23,6 @@ protected:
 	void PostLoad() override;
 	
 public:	
-	void CreateTriangle();
 	UFUNCTION(BlueprintCallable, Category = "Tool|MeshGeneration")
 		void AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_transform);
 	void AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform& i_transform);
