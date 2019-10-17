@@ -4,6 +4,11 @@
 #include "Public/Tool/GeometryUtility.h"
 #include  "Engine/StaticMesh.h"
 
+struct sortVertex {
+	FVector data;
+	int index;
+};
+
 // Sets default values
 AAMeshGenerator::AAMeshGenerator()
 {
@@ -43,7 +48,7 @@ void AAMeshGenerator::PostLoad()
 	//CreateTriangle();
 }
 
-void AAMeshGenerator::AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform &i_transform)
+void AAMeshGenerator::AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform& i_transform)
 {
 	TArray<FVector> vertices;
 	TArray<int32> Triangles;
@@ -105,13 +110,84 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 		GeometryUtility::MeshSectionIntersection(finalMesh, addedMesh, resultB, planeBStatus, planeAStatus, 1);
 		finalMesh.ProcIndexBuffer.Empty();
 		finalMesh.ProcVertexBuffer.Empty();
-		finalMesh.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);
-		finalMesh.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
-		finalMesh.ProcIndexBuffer.Append(resultA.ProcIndexBuffer);
-		for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j++)
+		addedMesh.ProcVertexBuffer.Empty();
+		addedMesh.ProcIndexBuffer.Empty();
+		addedMesh.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);
+		addedMesh.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
+		TArray<sortVertex> p;
+		p.Empty();
+		//p.Init(0, finalMesh.ProcVertexBuffer.Num());
+		for (int pi = 0; pi < finalMesh.ProcVertexBuffer.Num(); pi++)
 		{
-			finalMesh.ProcIndexBuffer.Add(resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num());
+			p.Add(sortVertex{
+				finalMesh.ProcVertexBuffer[pi].Position,
+				pi,
+				});
 		}
+		p.Sort([](const sortVertex& a, const sortVertex& b) {
+			if (GeometryUtility::eps(a.data.X - b.data.X) > 0)
+			{
+				return true;
+			}
+			if (GeometryUtility::eps(a.data.X - b.data.X) == 0 && GeometryUtility::eps(a.data.Y - b.data.Y) > 0)
+			{
+				return true;
+			}
+			if (GeometryUtility::eps(a.data.X - b.data.X) == 0 && GeometryUtility::eps(a.data.Y - b.data.Y) == 0 && GeometryUtility::eps(a.data.Z - b.data.Z) > 0)
+			{
+				return true;
+			}
+			return false;
+			});
+		TArray<int32> rIndex, vertexPlaneStatus;
+		rIndex.Init(0, p.Num());
+		vertexPlaneStatus.Init(0, p.Num());
+		int32 newIndexNum = 0;
+		rIndex[p[0].index] = 0;
+		finalMesh.ProcVertexBuffer.Add(addedMesh.ProcVertexBuffer[p[0].index]);
+		vertexPlaneStatus[0] |= 1 << ((p[0].index >= resultA.ProcVertexBuffer.Num()));
+		for (int pi = 1; pi < p.Num(); pi++)
+		{
+			if (GeometryUtility::eps(p[pi].data.X - p[pi - 1].data.X) != 0 &&
+				GeometryUtility::eps(p[pi].data.Y - p[pi - 1].data.Y) != 0 &&
+				GeometryUtility::eps(p[pi].data.Z - p[pi - 1].data.Z) != 0)
+			{
+				newIndexNum++;
+				finalMesh.ProcVertexBuffer.Add(addedMesh.ProcVertexBuffer[p[pi].index]);
+			}			
+			vertexPlaneStatus[newIndexNum] |= 1 << ((p[pi].index >= resultA.ProcVertexBuffer.Num()));
+			rIndex[p[pi].index] = newIndexNum;
+		}
+
+		for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j+=3)
+		{
+			if ((planeAStatus[resultA.ProcIndexBuffer[j]] != 0 &&
+				planeAStatus[resultA.ProcIndexBuffer[j + 1]] != 0 &&
+				planeAStatus[resultA.ProcIndexBuffer[j + 2]] != 0) &&
+				(vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j]]] == 3 &&
+					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 1]]] == 3 &&
+					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 2]]] == 3))
+			{
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j]]);
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 1]]);
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 2]]);
+			}
+		}
+		for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
+		{
+			if ((planeAStatus[resultB.ProcIndexBuffer[j]] != 0 &&
+				planeAStatus[resultB.ProcIndexBuffer[j + 1]] != 0 &&
+				planeAStatus[resultB.ProcIndexBuffer[j + 2]] != 0) &&
+				(vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j]] + resultA.ProcVertexBuffer.Num()] == 3 &&
+					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 1]] + resultA.ProcVertexBuffer.Num()] == 3 &&
+					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 2]] + resultA.ProcVertexBuffer.Num()] == 3))
+			{
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
+				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
+			}
+		}
+
 	}
 	m_mesh->ClearAllMeshSections();
 	AddMeshSection(0, finalMesh, FTransform());

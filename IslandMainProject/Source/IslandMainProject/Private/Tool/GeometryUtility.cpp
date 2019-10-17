@@ -346,12 +346,6 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			triangleVerticesArray[j] = i_a.ProcVertexBuffer[i_a.ProcIndexBuffer[i + j]].Position;
 			triangleNewIndicesArray[j] = j;
 		}
-		if (triangleIndicesArray[0] == 8 &&
-			triangleIndicesArray[1] == 10 &&
-			triangleIndicesArray[2] == 11)
-		{
-			int k = 0;
-		}
 		TArray<uint32> additionIndices = triangleNewIndicesArray;
 		TArray<DVector> additionVertices = triangleVerticesArray;
 		if (phase == 0) // if the triangle intersect the polythedreon
@@ -418,7 +412,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	else if (phase == 1)
 	{
 		indexConvdersion.Init(0, addedVertices.Num());
-
+		t_planeAStatus.Empty();
 		// fliter vertex that in the polyhedron
 		int filteringVerticesNum = 0;
 		for (int i = 0; i < addedVertices.Num(); i++) {
@@ -426,6 +420,13 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			if (i >= i_a.ProcVertexBuffer.Num() || !verticesStatus[i])
 			{
 				o_result.ProcVertexBuffer.Add(addedVertices[i]);
+				if (i >= i_a.ProcVertexBuffer.Num())
+				{
+					t_planeAStatus.Add(1);
+				}
+				else {
+					t_planeAStatus.Add(0);
+				}
 				filteringVerticesNum++;
 			}
 		}
