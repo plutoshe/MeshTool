@@ -161,7 +161,8 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	const FProcMeshSection& i_b, 
 	TArray<DVector>& o_generateVertices,
 	TArray<uint32>& o_generateIndices, 
-	TArray<int>& t_planeBStatus)
+	TArray<int>& t_planeBStatus,
+	int phase)
 {
 	if (i_vertices.Num() < 3)
 	{
@@ -224,7 +225,7 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 					}
 				}
 				// 
-				if (partitionPoints.Num() > 0 && t_planeBStatus[i / 3] != 1)
+				if (phase == 0 && partitionPoints.Num() > 0 && t_planeBStatus[i / 3] == 0)
 				{
 					t_planeBStatus[i / 3] = 2;
 				}
@@ -353,7 +354,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			if (verticesStatus[i_a.ProcIndexBuffer[i]] || verticesStatus[i_a.ProcIndexBuffer[i + 1]] || verticesStatus[i_a.ProcIndexBuffer[i + 2]] &&
 				!(verticesStatus[i_a.ProcIndexBuffer[i]] && verticesStatus[i_a.ProcIndexBuffer[i + 1]] && verticesStatus[i_a.ProcIndexBuffer[i + 2]]))
 			{
-				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus);
+				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus, phase);
 				t_planeAStatus[i / 3] = 1;
 			}
 			else
@@ -368,7 +369,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		{
 			if (t_planeAStatus[i / 3] == 2)
 			{
-				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus);
+				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus, phase);
 			}
 		}
 		if (phase == 0 && t_planeAStatus[i / 3] == 1 || phase == 1 && t_planeAStatus[i / 3] != 1)
@@ -422,10 +423,10 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 				o_result.ProcVertexBuffer.Add(addedVertices[i]);
 				if (i >= i_a.ProcVertexBuffer.Num())
 				{
-					t_planeAStatus.Add(1);
+					t_planeAStatus.Add(4);
 				}
 				else {
-					t_planeAStatus.Add(0);
+					t_planeAStatus.Add(3);
 				}
 				filteringVerticesNum++;
 			}

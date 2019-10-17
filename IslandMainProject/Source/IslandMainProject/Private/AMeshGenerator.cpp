@@ -4,9 +4,12 @@
 #include "Public/Tool/GeometryUtility.h"
 #include  "Engine/StaticMesh.h"
 
-struct sortVertex {
+class sortVertex {
+public:
 	FVector data;
 	int index;
+	sortVertex() : data(), index(0) {}
+	sortVertex(FVector i_data, int i_index) : data(i_data), index(i_index) {}
 };
 
 // Sets default values
@@ -116,13 +119,13 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 		addedMesh.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
 		TArray<sortVertex> p;
 		p.Empty();
+		p.Init(sortVertex(), 0);
 		//p.Init(0, finalMesh.ProcVertexBuffer.Num());
-		for (int pi = 0; pi < finalMesh.ProcVertexBuffer.Num(); pi++)
+		for (int pi = 0; pi < addedMesh.ProcVertexBuffer.Num(); pi++)
 		{
-			p.Add(sortVertex{
-				finalMesh.ProcVertexBuffer[pi].Position,
-				pi,
-				});
+			p.Add(sortVertex(
+				addedMesh.ProcVertexBuffer[pi].Position,
+				pi));
 		}
 		p.Sort([](const sortVertex& a, const sortVertex& b) {
 			if (GeometryUtility::eps(a.data.X - b.data.X) > 0)
@@ -145,46 +148,52 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 		int32 newIndexNum = 0;
 		rIndex[p[0].index] = 0;
 		finalMesh.ProcVertexBuffer.Add(addedMesh.ProcVertexBuffer[p[0].index]);
-		vertexPlaneStatus[0] |= 1 << ((p[0].index >= resultA.ProcVertexBuffer.Num()));
+		vertexPlaneStatus[0] |= 1 << (int)((p[0].index >= resultA.ProcVertexBuffer.Num()));
 		for (int pi = 1; pi < p.Num(); pi++)
 		{
-			if (GeometryUtility::eps(p[pi].data.X - p[pi - 1].data.X) != 0 &&
-				GeometryUtility::eps(p[pi].data.Y - p[pi - 1].data.Y) != 0 &&
-				GeometryUtility::eps(p[pi].data.Z - p[pi - 1].data.Z) != 0)
+			if (GeometryUtility::eps(p[pi].data.X - p[pi - 1].data.X) != 3 &&
+				GeometryUtility::eps(p[pi].data.Y - p[pi - 1].data.Y) != 3 &&
+				GeometryUtility::eps(p[pi].data.Z - p[pi - 1].data.Z) != 3)
 			{
 				newIndexNum++;
 				finalMesh.ProcVertexBuffer.Add(addedMesh.ProcVertexBuffer[p[pi].index]);
 			}			
-			vertexPlaneStatus[newIndexNum] |= 1 << ((p[pi].index >= resultA.ProcVertexBuffer.Num()));
+			vertexPlaneStatus[newIndexNum] |= 1 << (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
 			rIndex[p[pi].index] = newIndexNum;
 		}
 
-		for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j+=3)
+		if (m_insertMode != 1)
 		{
-			if ((planeAStatus[resultA.ProcIndexBuffer[j]] != 0 &&
-				planeAStatus[resultA.ProcIndexBuffer[j + 1]] != 0 &&
-				planeAStatus[resultA.ProcIndexBuffer[j + 2]] != 0) &&
-				(vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j]]] == 3 &&
-					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 1]]] == 3 &&
-					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 2]]] == 3))
+			for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j += 3)
 			{
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j]]);
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 1]]);
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 2]]);
+				if ((planeAStatus[resultA.ProcIndexBuffer[j]] == 3 ||
+					planeAStatus[resultA.ProcIndexBuffer[j + 1]] == 3 ||
+					planeAStatus[resultA.ProcIndexBuffer[j + 2]] == 3) ||
+					(vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j]]] == 3 &&
+						vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 1]]] == 3 &&
+						vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 2]]] == 3))
+				{
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j]]);
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 1]]);
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 2]]);
+				}
 			}
 		}
-		for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
+		if (m_insertMode != 2)
 		{
-			if ((planeAStatus[resultB.ProcIndexBuffer[j]] != 0 &&
-				planeAStatus[resultB.ProcIndexBuffer[j + 1]] != 0 &&
-				planeAStatus[resultB.ProcIndexBuffer[j + 2]] != 0) &&
-				(vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j]] + resultA.ProcVertexBuffer.Num()] == 3 &&
-					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 1]] + resultA.ProcVertexBuffer.Num()] == 3 &&
-					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 2]] + resultA.ProcVertexBuffer.Num()] == 3))
+			for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
 			{
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
-				finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
+				if ((planeBStatus[resultB.ProcIndexBuffer[j]] == 3 ||
+					planeBStatus[resultB.ProcIndexBuffer[j + 1]] == 3 ||
+					planeBStatus[resultB.ProcIndexBuffer[j + 2]] == 3) ||
+					(vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]] == 3 &&
+						vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]] == 3 &&
+						vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]] == 3))
+				{
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
+					finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
+				}
 			}
 		}
 

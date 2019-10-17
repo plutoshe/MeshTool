@@ -28,6 +28,8 @@ public:
 	void AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform& i_transform);
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	UPROPERTY(VisibleAnywhere, BluePrintReadWrite)
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		int m_insertMode;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UProceduralMeshComponent* m_mesh;
 };
