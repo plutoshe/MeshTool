@@ -21,6 +21,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 	i_point = i_point - i_v0;
 	double paramA;
 	double paramB;
+	double resultC;
 	if (lineA.X * lineB.Y - lineA.Y * lineB.X != 0)
 	{
 		paramA = (i_point.X * lineB.Y - i_point.Y * lineB.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
@@ -32,6 +33,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 		{
 			paramB = (i_point.Y - lineA.Y * paramA) / lineB.Y;
 		}
+		resultC = paramA * lineA.Z + paramB * lineB.Z - i_point.Z;
 	}
 	else if ((lineA.X * lineB.Z - lineA.Z * lineB.X) != 0)
 	{
@@ -44,6 +46,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 		{
 			paramB = (i_point.Z - lineA.Z * paramA) / lineB.Z;
 		}
+		resultC = paramA * lineA.Y + paramB * lineB.Y - i_point.Y;
 	}
 	else
 	{
@@ -56,21 +59,22 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 		{
 			paramB = (i_point.Y - lineA.Y * paramA) / lineB.Y;
 		}
+		resultC = paramA * lineA.X + paramB * lineB.X - i_point.X;
 	}
 	
 	
 	
-	if (eps(paramA - 0) > 0 &&  eps(paramB) > 0 && eps(paramA + paramB - 1) < 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
+	if (eps(paramA - 0) > 0 &&  eps(paramB) > 0 && eps(paramA + paramB - 1) < 0 && eps(resultC) == 0)
 	{
 		return 1;
 	}
 	// include situations on lines
-	if (eps(paramA + paramB) > 0 && eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramA - 1) < 0 && eps(paramB - 1) < 0 && eps(paramB + paramA - 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
+	if (eps(paramA + paramB) > 0 && eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramA - 1) < 0 && eps(paramB - 1) < 0 && eps(paramB + paramA - 1) <= 0 && eps(resultC) == 0)
 	{
 		return 2;
 	}
 	// include situations on points
-	if (eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramB + paramA - 1) <= 0 && eps(paramA * lineA.Z + paramB * lineB.Z - i_point.Z) == 0)
+	if (eps(paramA) >= 0 && eps(paramB) >= 0 && eps(paramB + paramA - 1) <= 0 && eps(resultC) == 0)
 	{
 		return 3;
 	}
