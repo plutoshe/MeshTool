@@ -29,12 +29,25 @@ public:
 		return 0;
 
 	}
+	class sortVertex {
+	public:
+		FVector data;
+		int index;
+		sortVertex() : data(), index(0) {}
+		sortVertex(FVector i_data, int i_index) : data(i_data), index(i_index) {}
+	};
 	static bool IsPointOnLineSegment(const DVector& i_point, const DVector& i_v0, const DVector& i_v1);
 	static int IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2);
 	static bool IsPointInPolyhedron(DVector i_vertices, const FProcMeshSection& i_mesh);
 	static void TraingleIntersectPolyhedron(TArray<DVector> i_vertex, TArray<uint32> i_indices, const FProcMeshSection& i_b, TArray<DVector> &o_generateVertices, TArray<uint32> &o_generateIndices, TArray<int>& t_planeBStatus, int phase);	static void MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<int>& t_planeAStatus, TArray<int>& t_planeBStatus, int phase);
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_normal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
+	static FProcMeshSection MeshCombination(FProcMeshSection i_finalMesh, FProcMeshSection i_addedMesh, int i_insertMode);
+	static TArray<int> m_vertexBorder[2];
+	static int m_currentVertexBorderID;
+	static int FindFather(TArray<int>& i_status, int i_a);
+	static void BorderLink(TArray<int>& i_status, int i_a, int i_b);
+
 };
 
 class DVector
