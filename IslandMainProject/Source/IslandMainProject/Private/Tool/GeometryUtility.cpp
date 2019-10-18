@@ -2,7 +2,9 @@
 
 
 #include "GeometryUtility.h"
+#include "DrawDebugHelpers.h"
 const double GeometryUtility::eps_const = 1e-4;
+UWorld* GeometryUtility::m_world = nullptr;
 GeometryUtility::GeometryUtility()
 {
 }
@@ -61,7 +63,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 		}
 		resultC = paramA * lineA.X + paramB * lineB.X - i_point.X;
 	}
-	
+
 	
 	
 	if (eps(paramA - 0) > 0 &&  eps(paramB) > 0 && eps(paramA + paramB - 1) < 0 && eps(resultC) == 0)
@@ -150,7 +152,7 @@ bool GeometryUtility::GetLineAndLineIntersectionPoint(const DVector& i_va, const
 	double da = DVector::DotProduct(sa, perp);
 	double db = DVector::DotProduct(sb, perp);
 	DVector intersection = (sa + (-da) / (db - da) * (sb - sa));
-	if ((eps(da) >= 0 && eps(db) <= 0 || eps(da) <= 0 && eps(db) >= 0) && (eps(da + db) != 0) && intersection.Size() <= line.Size())
+	if ((eps(da) >= 0 && eps(db) <= 0 || eps(da) <= 0 && eps(db) >= 0) &&  intersection.Size() <= line.Size())
 	{
 		o_intersection = i_linea + intersection;
 
@@ -233,9 +235,13 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 				{
 					t_planeBStatus[i / 3] = 2;
 				}
-				if (i == 1605)
+				FlushPersistentDebugLines(m_world);
+				DrawDebugLine(m_world, ova.FVectorConversion(), ovb.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
+				DrawDebugLine(m_world, ovb.FVectorConversion(), ovc.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
+				DrawDebugLine(m_world, ova.FVectorConversion(), ovc.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
+				if (partitionPoints.Num() >= 2)
 				{
-					int k = 0;
+					DrawDebugLine(m_world, partitionPoints[0].FVectorConversion(), partitionPoints[1].FVectorConversion(), FColor(0, 0, 0), true, -1, 0, 1);
 				}
 				for (int partitionID = 0; partitionID < partitionPoints.Num(); partitionID++)
 				{

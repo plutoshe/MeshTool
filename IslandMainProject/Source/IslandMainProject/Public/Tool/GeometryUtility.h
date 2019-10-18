@@ -15,6 +15,7 @@ public:
 	GeometryUtility();
 	~GeometryUtility();
 	static const double eps_const;
+	static UWorld* m_world;
 	static int eps(double gap)
 	{
 		if (gap > eps_const)

@@ -99,6 +99,7 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 
 	}
 	FProcMeshSection finalMesh = *(m_mesh->GetProcMeshSection(0));
+	GeometryUtility::m_world = GetWorld();
 	for (int i = 1; i < m_mesh->GetNumSections(); i++)
 	{
 		FProcMeshSection addedMesh = *(m_mesh->GetProcMeshSection(i));
