@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "GeometryUtility.h"
@@ -553,15 +553,18 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 				else {
 					t_planeAStatus.Add(3);
 				}
+				
 				filteringVerticesNum++;
 			}
 		}
-		for (int i = 0; i < filteringVerticesNum; i++)
+		int pi = 0;
+		for (int i = 0; i < addedVertices.Num(); i++)
 		{
-			m_vertexBorder[m_currentVertexBorderID][filteringVerticesNum]
-				= indexConvdersion[m_vertexBorder[m_currentVertexBorderID][i]];
+			if (i == 0 || indexConvdersion[i] != indexConvdersion[i - 1])
+			{
+				m_vertexBorder[m_currentVertexBorderID][indexConvdersion[i]] = indexConvdersion[m_vertexBorder[m_currentVertexBorderID][i]];
+			}
 		}
-
 		for (int i = 0; i < addedIndices.Num() - 2; i += 3)
 		{
 			UE_LOG(LogTemp, Log, TEXT("%s %s %s"),
@@ -760,17 +763,17 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 	{
 		for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
 		{
+			int fa = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j]);
+			int fb = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 1]);
+			int fc = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 2]);
+
 			if ((planeBStatus[resultB.ProcIndexBuffer[j]] == 3 ||
 				planeBStatus[resultB.ProcIndexBuffer[j + 1]] == 3 ||
 				planeBStatus[resultB.ProcIndexBuffer[j + 2]] == 3) ||
-				(vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]] == 3 &&
-					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]] == 3 &&
-					vertexPlaneStatus[rIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]] == 3))
+				(vertexPlaneStatus[rIndex[fa + resultA.ProcVertexBuffer.Num()]] == 3 &&
+					vertexPlaneStatus[rIndex[fb + resultA.ProcVertexBuffer.Num()]] == 3 &&
+					vertexPlaneStatus[rIndex[fc + resultA.ProcVertexBuffer.Num()]] == 3))
 			{
-				int fa = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j]);
-				int fb = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 1]);
-				int fc = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 2]);
-
 				if (fa != fb || fb != fc)
 				{
 					i_finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
