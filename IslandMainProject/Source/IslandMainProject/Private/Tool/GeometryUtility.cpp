@@ -3,10 +3,11 @@
 
 #include "GeometryUtility.h"
 #include "DrawDebugHelpers.h"
-const double GeometryUtility::eps_const = 1e-4;
+const double GeometryUtility::eps_const = 1e-5;
 UWorld* GeometryUtility::m_world = nullptr;
 TArray<int> GeometryUtility::m_vertexBorder[2] = { {}, {} };
 int GeometryUtility::m_currentVertexBorderID = 0;
+int GeometryUtility::m_block = -1;
 GeometryUtility::GeometryUtility()
 {
 }
@@ -150,9 +151,24 @@ bool GeometryUtility::GetLineAndLineIntersectionPoint(const DVector& i_va, const
 	DVector sa = i_va - i_linea;
 	DVector sb = i_vb - i_linea;
 	DVector perp = sa - line * (DVector::DotProduct(sa, line) / line.Size() / line.Size());
+	if (isnan(perp.X))
+	{
+		int i = 0;
+	}
+	if (perp.Size() == 0)
+	{
+		o_intersection = i_va;
+		return true;
+	}
 	perp.Normalize();
 	double da = DVector::DotProduct(sa, perp);
 	double db = DVector::DotProduct(sb, perp);
+	
+	if (eps(da - db) == 0)
+	{
+		o_intersection = i_va;
+		return true;
+	}
 	DVector intersection = (sa + (-da) / (db - da) * (sb - sa));
 	if ((eps(da) >= 0 && eps(db) <= 0 || eps(da) <= 0 && eps(db) >= 0) &&  intersection.Size() <= line.Size())
 	{
@@ -185,7 +201,7 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	DVector intersection;
 	TArray<DVector> planeIntersections;
 	TArray<DVector> lineIntersections;
-	TArray<DVector> partitionPoints;
+	TArray<sortVertex<DVector>> partitionPoints;
 	for (int i = 0; i + 2 < i_b.ProcIndexBuffer.Num(); i+=3)
 	{
 		FProcMeshVertex va = i_b.ProcVertexBuffer[i_b.ProcIndexBuffer[i]];
@@ -214,7 +230,7 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 				for (int p_i = 0; p_i < planeIntersections.Num(); p_i++) {
 					if (IsPointInTriangle(planeIntersections[p_i], ova, ovb, ovc) == 1)
 					{
-						partitionPoints.Add(planeIntersections[p_i]);
+						partitionPoints.Add(sortVertex<DVector>(planeIntersections[p_i], -1));
 					}
 				}
 
@@ -223,25 +239,66 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 					uint32 ia = o_generateIndices[j];
 					uint32 ib = o_generateIndices[j + 1];
 					uint32 ic = o_generateIndices[j + 2];
-					auto sva = o_generateVertices[ia];
-					auto svb = o_generateVertices[ib];
-					auto svc = o_generateVertices[ic];
+					DVector sva = o_generateVertices[ia];
+					DVector svb = o_generateVertices[ib];
+					DVector svc = o_generateVertices[ic];
+					if (sva == planeIntersections[0] || sva == planeIntersections[1])
+					{
+						partitionPoints.Add(sortVertex<DVector>(sva, -1 * (int)(ia < 3) + ia * (int)(ia >= 3)));
+					}
+					if (svb == planeIntersections[0] || svb == planeIntersections[1])
+					{ 
+						partitionPoints.Add(sortVertex<DVector>(svc, -1 * (int)(ib < 3) + ib * (int)(ib >= 3)));
+					}
+					if (svc == planeIntersections[0] || svc == planeIntersections[1])
+					{
+						partitionPoints.Add(sortVertex<DVector>(svc, -1 * (int)(ic < 3) + ic * (int)(ic >= 3)));
+					}
+
 					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svb, sva, intersection))
 					{
-						partitionPoints.Add(intersection);
+						partitionPoints.Add(sortVertex<DVector>(intersection, -1));
 					}
 					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svc, sva, intersection))
 					{
-						partitionPoints.Add(intersection);
+						partitionPoints.Add(sortVertex<DVector>(intersection, -1));
 					}
 					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svc, svb, intersection))
 					{
-						partitionPoints.Add(intersection);
+						partitionPoints.Add(sortVertex<DVector>(intersection, -1));
 					}
 				}
-			
+				partitionPoints.Sort([](const sortVertex<DVector>& a, const sortVertex<DVector>& b) {
+					if (GeometryUtility::eps(a.data.X - b.data.X) < 0)
+					{
+						return true;
+					}
+					if (GeometryUtility::eps(a.data.X - b.data.X) == 0 && GeometryUtility::eps(a.data.Y - b.data.Y) < 0)
+					{
+						return true;
+					}
+					if (GeometryUtility::eps(a.data.X - b.data.X) == 0 && GeometryUtility::eps(a.data.Y - b.data.Y) == 0 && GeometryUtility::eps(a.data.Z - b.data.Z) < 0)
+					{
+						return true;
+					}
+
+					if (GeometryUtility::eps(a.data.X - b.data.X) == 0 && GeometryUtility::eps(a.data.Y - b.data.Y) == 0 && GeometryUtility::eps(a.data.Z - b.data.Z) == 0 && a.index < b.index)
+					{
+						return true;
+					}
+					return false;
+					});
 				// 
-				if (phase == 0 && partitionPoints.Num() > 0 && t_planeBStatus[i / 3] == 0)
+				int pi = 1;
+				while (pi < partitionPoints.Num()) {
+					if (partitionPoints[pi].data == partitionPoints[pi - 1].data) {
+						partitionPoints.RemoveAt(pi);
+					}
+					else {
+						pi++;
+					}
+				}
+				if (phase == 0 && partitionPoints.Num() > 1 && t_planeBStatus[i / 3] == 0)
 				{
 					t_planeBStatus[i / 3] = 2;
 				}
@@ -249,60 +306,69 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 				int linkPartition = -1;
 				for (int partitionID = 0; partitionID < partitionPoints.Num(); partitionID++)
 				{
+					if (isnan(partitionPoints[partitionID].data.X))
+					{
+						int j = 0;
+					}
 					bool exist = false;
 					uint32 currentVertexID = o_generateVertices.Num();
-					for (int j = 0; j < o_generateIndices.Num() - 2; j += 3)
+					for (int j = (o_generateIndices.Num() - 3) / 3 * 3; j >= 0; j -= 3)
 					{
-						auto result = IsPointInTriangle(partitionPoints[partitionID],
+						auto result = IsPointInTriangle(partitionPoints[partitionID].data,
 							o_generateVertices[o_generateIndices[j]],
 							o_generateVertices[o_generateIndices[j + 1]],
 							o_generateVertices[o_generateIndices[j + 2]]);
 						if (result > 0 && result < 3)
 						{
-							exist = true;
+							///exist = true;
 							uint32 ia = o_generateIndices[j];
 							uint32 ib = o_generateIndices[j + 1];
 							uint32 ic = o_generateIndices[j + 2];
 							auto sva = o_generateVertices[ia];
 							auto svb = o_generateVertices[ib];
 							auto svc = o_generateVertices[ic];
-							auto p = partitionPoints[partitionID];
-							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ia], o_generateVertices[ib]))
+							auto p = partitionPoints[partitionID].data;
+							if (!IsPointOnLineSegment(partitionPoints[partitionID].data, o_generateVertices[ia], o_generateVertices[ib]))
 							{
 								o_generateIndices.Add(ia);
 								o_generateIndices.Add(ib);
 								o_generateIndices.Add(currentVertexID);
 							}
-							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ic], o_generateVertices[ia]))
+							if (!IsPointOnLineSegment(partitionPoints[partitionID].data, o_generateVertices[ic], o_generateVertices[ia]))
 							{
 								o_generateIndices.Add(ic);
 								o_generateIndices.Add(ia);
 								o_generateIndices.Add(currentVertexID);
 							}
-							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ib], o_generateVertices[ic]))
+							if (!IsPointOnLineSegment(partitionPoints[partitionID].data, o_generateVertices[ib], o_generateVertices[ic]))
 							{
 								o_generateIndices.Add(ib);
 								o_generateIndices.Add(ic);
 								o_generateIndices.Add(currentVertexID);
 							}
 							o_generateIndices.RemoveAt(j, 3);
-							break;
 						}
 					}
-					if (exist)
+					//if (exist)
+					//{
+					if (partitionPoints[partitionID].index == -1)
 					{
+						partitionPoints[partitionID].index = m_vertexBorder[m_currentVertexBorderID].Num();
 						m_vertexBorder[m_currentVertexBorderID].Add(m_vertexBorder[m_currentVertexBorderID].Num());
-						if (linkPartition != -1)
-						{
-							BorderLink(m_vertexBorder[m_currentVertexBorderID], m_vertexBorder[m_currentVertexBorderID].Num() - 1, linkPartition);
-						}
-						else {
-							linkPartition = m_vertexBorder[m_currentVertexBorderID].Num() - 1;
-						}
-						
-						o_generateVertices.Add(partitionPoints[partitionID]);
+						o_generateVertices.Add(partitionPoints[partitionID].data);
 					}
+					if (linkPartition != -1)
+					{
+						BorderLink(m_vertexBorder[m_currentVertexBorderID], partitionPoints[partitionID].index, linkPartition);
+					}
+					else {
+						linkPartition = partitionPoints[partitionID].index;
+					}
+
+					
+					//}
 				}
+				
 			}
 		}
 	}
@@ -394,6 +460,10 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	triangleNewIndicesArray.Init(0, 3);
 	for (int i = 0; i < i_a.ProcIndexBuffer.Num() - 2; i += 3)
 	{
+		if (i/3 == m_block)
+		{
+			continue;
+		}
 		for (int j = 0; j < 3; j++)
 		{
 			triangleIndicesArray[j] = i_a.ProcIndexBuffer[i + j];
@@ -407,6 +477,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			if (verticesStatus[i_a.ProcIndexBuffer[i]] || verticesStatus[i_a.ProcIndexBuffer[i + 1]] || verticesStatus[i_a.ProcIndexBuffer[i + 2]] &&
 				!(verticesStatus[i_a.ProcIndexBuffer[i]] && verticesStatus[i_a.ProcIndexBuffer[i + 1]] && verticesStatus[i_a.ProcIndexBuffer[i + 2]]))
 			{
+				
 				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus, phase);
 				t_planeAStatus[i / 3] = 1;
 			}
@@ -422,7 +493,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 		{
 			if (t_planeAStatus[i / 3] == 2)
 			{
-				TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus, phase);
+				//TraingleIntersectPolyhedron(triangleVerticesArray, triangleNewIndicesArray, i_b, additionVertices, additionIndices, t_planeBStatus, phase);
 			}
 		}
 		if (phase == 0 && t_planeAStatus[i / 3] == 1 || phase == 1 && t_planeAStatus[i / 3] != 1)
@@ -473,6 +544,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			indexConvdersion[i] = filteringVerticesNum;
 			if (i >= i_a.ProcVertexBuffer.Num() || !verticesStatus[i])
 			{
+				
 				o_result.ProcVertexBuffer.Add(addedVertices[i]);
 				if (i >= i_a.ProcVertexBuffer.Num())
 				{
@@ -484,6 +556,12 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 				filteringVerticesNum++;
 			}
 		}
+		for (int i = 0; i < filteringVerticesNum; i++)
+		{
+			m_vertexBorder[m_currentVertexBorderID][filteringVerticesNum]
+				= indexConvdersion[m_vertexBorder[m_currentVertexBorderID][i]];
+		}
+
 		for (int i = 0; i < addedIndices.Num() - 2; i += 3)
 		{
 			UE_LOG(LogTemp, Log, TEXT("%s %s %s"),
@@ -570,18 +648,18 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 	i_addedMesh.ProcIndexBuffer.Empty();
 	i_addedMesh.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);
 	i_addedMesh.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
-	TArray<sortVertex> p;
+	TArray<sortVertex<FVector>> p;
 	p.Empty();
-	p.Init(sortVertex(), 0);
+	p.Init(sortVertex<FVector>(), 0);
 	//p.Init(0, finalMesh.ProcVertexBuffer.Num());
 	for (int pi = 0; pi < i_addedMesh.ProcVertexBuffer.Num(); pi++)
 	{
-		p.Add(sortVertex(
+		p.Add(sortVertex<FVector>(
 			i_addedMesh.ProcVertexBuffer[pi].Position,
 			pi));
 	}
-	p.Sort([](const sortVertex& a, const sortVertex& b) {
-		if (GeometryUtility::eps(a.data.X - b.data.X) > 0)
+	p.Sort([](const sortVertex<FVector>& a, const sortVertex<FVector>& b) {
+		if (GeometryUtility::eps(a.data.X - b.data.X) < 0)
 		{
 			return true;
 		}
@@ -630,24 +708,39 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 				BorderLink(m_vertexBorder[0], p[pi].index, p[pi - 1].index);
 			}
 		}
-		vertexPlaneStatus[newIndexNum] |= 1 << (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
+		int status = (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
+		vertexPlaneStatus[newIndexNum] |= 1 << status;
 		rIndex[p[pi].index] = newIndexNum;
 	}
-
+	for (int pi = 1; pi < p.Num(); pi++)
+	{
+		int status = (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
+		int ff = FindFather(m_vertexBorder[status], p[pi].index - status * resultA.ProcVertexBuffer.Num()) + status * resultA.ProcVertexBuffer.Num();
+		vertexPlaneStatus[rIndex[ff]] = FMath::Max(vertexPlaneStatus[rIndex[ff]], vertexPlaneStatus[rIndex[p[pi].index]]);
+	}
 	if (i_insertMode != 1)
 	{
 		for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j += 3)
 		{
+
+			auto va = resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j]];
+			auto vb = resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 1]];
+			auto vc = resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 2]];
+
+			DrawDebugLine(m_world, va.Position, vb.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, vb.Position, vc.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, vc.Position, va.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			int fa = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j]);
+			int fb = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 1]);
+			int fc = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 2]);
 			if ((planeAStatus[resultA.ProcIndexBuffer[j]] == 3 ||
 				planeAStatus[resultA.ProcIndexBuffer[j + 1]] == 3 ||
 				planeAStatus[resultA.ProcIndexBuffer[j + 2]] == 3) ||
-				(vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j]]] == 3 &&
-					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 1]]] == 3 &&
-					vertexPlaneStatus[rIndex[resultA.ProcIndexBuffer[j + 2]]] == 3))
+				(vertexPlaneStatus[rIndex[fa]] == 3 &&
+					vertexPlaneStatus[rIndex[fb]] == 3 &&
+					vertexPlaneStatus[rIndex[fc]] == 3))
 			{
-				int fa = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j]);
-				int fb = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 1]);
-				int fc = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 2]);
+				
 				if (fa != fb || fb != fc)
 				{
 					int i0 = resultA.ProcIndexBuffer[j];
@@ -677,6 +770,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 				int fa = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j]);
 				int fb = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 1]);
 				int fc = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 2]);
+
 				if (fa != fb || fb != fc)
 				{
 					i_finalMesh.ProcIndexBuffer.Add(rIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);

@@ -31,5 +31,7 @@ public:
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		int m_insertMode;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		int m_blockID;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UProceduralMeshComponent* m_mesh;
 };

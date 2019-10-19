@@ -29,12 +29,18 @@ public:
 		return 0;
 
 	}
+	template <class T>
 	class sortVertex {
 	public:
-		FVector data;
+		T data;
 		int index;
 		sortVertex() : data(), index(0) {}
-		sortVertex(FVector i_data, int i_index) : data(i_data), index(i_index) {}
+		sortVertex(T i_data, int i_index) : data(i_data), index(i_index) {}
+		sortVertex(const sortVertex& i_p) : data(i_p.data), index(i_p.index) {}
+		void operator = (const sortVertex& i_p) {
+			data = i_p.data; index = i_p.index;
+		}
+		//sortVertex(FVector i_data, int i_index) : data(i_data), index(i_index) {}
 	};
 	static bool IsPointOnLineSegment(const DVector& i_point, const DVector& i_v0, const DVector& i_v1);
 	static int IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2);
@@ -47,6 +53,7 @@ public:
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
 	static void BorderLink(TArray<int>& i_status, int i_a, int i_b);
+	static int m_block;
 
 };
 

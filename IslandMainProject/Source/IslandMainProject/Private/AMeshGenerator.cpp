@@ -14,6 +14,7 @@ AAMeshGenerator::AAMeshGenerator()
 	// New in UE 4.17, multi-threaded PhysX cooking.
 	m_mesh->bUseAsyncCooking = true;
 	m_mesh->ClearAllMeshSections();
+	m_blockID = -1;
 	
 }
 
@@ -92,6 +93,7 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 	}
 	FProcMeshSection finalMesh = *(m_mesh->GetProcMeshSection(0));
 	GeometryUtility::m_world = GetWorld();
+	GeometryUtility::m_block = m_blockID;
 	for (int i = 1; i < m_mesh->GetNumSections(); i++)
 	{
 		FProcMeshSection addedMesh = *(m_mesh->GetProcMeshSection(i));
