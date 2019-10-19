@@ -212,39 +212,40 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 			{
 				// if two point all in the triangle(even on the edges)
 				for (int p_i = 0; p_i < planeIntersections.Num(); p_i++) {
-					if (IsPointInTriangle(planeIntersections[p_i], ova, ovb, ovc) > 0)
+					if (IsPointInTriangle(planeIntersections[p_i], ova, ovb, ovc) == 1)
 					{
 						partitionPoints.Add(planeIntersections[p_i]);
 					}
 				}
-				if (partitionPoints.Num() < planeIntersections.Num())
+
+				for (int j = 0; j < o_generateIndices.Num() - 2; j += 3)
 				{
-					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovb, ova, intersection))
+					uint32 ia = o_generateIndices[j];
+					uint32 ib = o_generateIndices[j + 1];
+					uint32 ic = o_generateIndices[j + 2];
+					auto sva = o_generateVertices[ia];
+					auto svb = o_generateVertices[ib];
+					auto svc = o_generateVertices[ic];
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svb, sva, intersection))
 					{
 						partitionPoints.Add(intersection);
 					}
-					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovc, ova, intersection))
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svc, sva, intersection))
 					{
 						partitionPoints.Add(intersection);
 					}
-					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], ovc, ovb, intersection))
+					if (GetLineAndLineIntersectionPoint(planeIntersections[0], planeIntersections[1], svc, svb, intersection))
 					{
 						partitionPoints.Add(intersection);
 					}
 				}
+			
 				// 
 				if (phase == 0 && partitionPoints.Num() > 0 && t_planeBStatus[i / 3] == 0)
 				{
 					t_planeBStatus[i / 3] = 2;
 				}
-				FlushPersistentDebugLines(m_world);
-				DrawDebugLine(m_world, ova.FVectorConversion(), ovb.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
-				DrawDebugLine(m_world, ovb.FVectorConversion(), ovc.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
-				DrawDebugLine(m_world, ova.FVectorConversion(), ovc.FVectorConversion(), FColor(0, 255, 0), true, -1, 0, 1);
-				if (partitionPoints.Num() >= 2)
-				{
-					DrawDebugLine(m_world, partitionPoints[0].FVectorConversion(), partitionPoints[1].FVectorConversion(), FColor(0, 0, 0), true, -1, 0, 1);
-				}
+
 				int linkPartition = -1;
 				for (int partitionID = 0; partitionID < partitionPoints.Num(); partitionID++)
 				{
@@ -262,6 +263,10 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 							uint32 ia = o_generateIndices[j];
 							uint32 ib = o_generateIndices[j + 1];
 							uint32 ic = o_generateIndices[j + 2];
+							auto sva = o_generateVertices[ia];
+							auto svb = o_generateVertices[ib];
+							auto svc = o_generateVertices[ic];
+							auto p = partitionPoints[partitionID];
 							if (!IsPointOnLineSegment(partitionPoints[partitionID], o_generateVertices[ia], o_generateVertices[ib]))
 							{
 								o_generateIndices.Add(ia);
@@ -645,6 +650,12 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 				int fc = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 2]);
 				if (fa != fb || fb != fc)
 				{
+					int i0 = resultA.ProcIndexBuffer[j];
+					int i1 = resultA.ProcIndexBuffer[j + 1];
+					int i2 = resultA.ProcIndexBuffer[j + 2];
+					auto v0 = resultA.ProcVertexBuffer[i0];
+					auto v1 = resultA.ProcVertexBuffer[i1];
+					auto v2 = resultA.ProcVertexBuffer[i2];
 					i_finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j]]);
 					i_finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 1]]);
 					i_finalMesh.ProcIndexBuffer.Add(rIndex[resultA.ProcIndexBuffer[j + 2]]);
