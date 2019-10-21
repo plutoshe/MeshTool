@@ -45,8 +45,19 @@ public:
 	static bool IsPointOnLineSegment(const DVector& i_point, const DVector& i_v0, const DVector& i_v1);
 	static int IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2);
 	static bool IsPointInPolyhedron(DVector i_vertices, const FProcMeshSection& i_mesh);
-	static void TraingleIntersectPolyhedron(TArray<DVector> i_vertex, TArray<uint32> i_indices, const FProcMeshSection& i_b, TArray<DVector> &o_generateVertices, TArray<uint32> &o_generateIndices, TArray<int>& t_planeBStatus, int phase);	static void MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<int>& t_planeAStatus, TArray<int>& t_planeBStatus, int phase);
-	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_normal, DVector&o_intersection);
+	static void TraingleIntersectPolyhedron(
+		TArray<DVector> i_vertex, 
+		TArray<uint32> i_indices, 
+		const FProcMeshSection& i_b, 
+		TArray<DVector> &o_generateVertices,
+		TArray<uint32> &o_generateIndices);	
+	static void MeshSectionIntersection(
+		const FProcMeshSection& i_a, 
+		const FProcMeshSection& i_b, 
+		FProcMeshSection& o_result, 
+		TArray<int>& t_planeAStatus, 
+		TArray<int>& t_planeBStatus);
+	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_planePoint, const DVector& i_planeNormal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
 	static FProcMeshSection MeshCombination(FProcMeshSection i_finalMesh, FProcMeshSection i_addedMesh, int i_insertMode);
 	static TArray<int> m_vertexBorder[2];
@@ -85,6 +96,8 @@ public:
 
 	static double DotProduct(const DVector& i_a, const DVector& i_b) { return i_a.X * i_b.X + i_a.Y * i_b.Y + i_a.Z * i_b.Z; }
 	double Size() const { return sqrt(X * X + Y * Y + Z * Z); }
+	static const DVector Zero;
+	static const DVector Unit;
 	static DVector CrossProduct(const DVector& i_a, const DVector& i_b)
 	{
 		return DVector(
