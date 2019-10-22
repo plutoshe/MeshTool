@@ -9,6 +9,7 @@
  */
 
 class DVector;
+class DVertex;
 class ISLANDMAINPROJECT_API GeometryUtility
 {
 public:
@@ -48,7 +49,7 @@ public:
 	static bool IsPointInPolyhedron(DVector i_vertices, const FProcMeshSection& i_mesh);
 	static void TraingleIntersectPolyhedron(
 		const FProcMeshSection& i_b, 
-		TArray<FProcMeshVertex> &o_vertices,
+		TArray<DVertex> &o_vertices,
 		TArray<uint32> &o_indices);	
 	static void MeshSectionIntersection(
 		const FProcMeshSection& i_a, 
@@ -59,12 +60,12 @@ public:
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_planePoint, const DVector& i_planeNormal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
 	static FProcMeshSection MeshCombination(FProcMeshSection i_finalMesh, FProcMeshSection i_addedMesh, int i_insertMode);
-	static TArray<int> m_vertexBorder[3];
+	static TArray<int> m_vertexBorder[2];
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
 	static void DisjointSetLink(TArray<int>& i_status, int i_a, int i_b);
 	static int m_block;
-	static int AddNewVertex(TArray<FProcMeshVertex>& o_vertices, FProcMeshVertex newData);
+	static int AddNewVertex(TArray<DVertex>& o_vertices, DVertex newData);
 	static void BorderLink(TArray<int>& i_disjointSetStatus, TMap<int, int>& i_indexPartitionPointMapping, TArray<int>& i_intersetctionsStatus, int i_indexA, int i_indexB);
 
 };
@@ -114,4 +115,28 @@ class partitionPointST {
 	DVector m_data;
 	int m_intersetionIndex;
 	int m_index;
+};
+
+
+class DVertex {
+public:
+	DVector m_Position;
+	DVertex() : m_Position() {}
+	DVertex(const DVertex& i_v) : m_Position(i_v.m_Position) {}
+	DVertex(const FProcMeshVertex& i_v) { Equal(i_v); }
+	void Equal(const FProcMeshVertex& i_v)
+	{
+		m_Position = i_v.Position;
+
+	}
+	void operator = (const FProcMeshVertex& i_v) 
+	{
+		Equal(i_v);
+	}
+	FProcMeshVertex ToProcVertex()
+	{
+		auto a = FProcMeshVertex();
+		a.Position = m_Position.FVectorConversion();
+		return a;
+	}
 };
