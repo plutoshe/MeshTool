@@ -60,7 +60,7 @@ public:
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_planePoint, const DVector& i_planeNormal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
 	static FProcMeshSection MeshCombination(FProcMeshSection i_finalMesh, FProcMeshSection i_addedMesh, int i_insertMode);
-	static TArray<int> m_vertexBorder[2];
+	static TArray<int> m_vertexBorder[3];
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
 	static void BorderLink(TArray<int>& i_status, int i_a, int i_b);

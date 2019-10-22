@@ -31,7 +31,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 	double paramA;
 	double paramB;
 	double resultC;
-	if (lineA.X * lineB.Y - lineA.Y * lineB.X != 0)
+	if (eps(lineA.X * lineB.Y - lineA.Y * lineB.X) != 0)
 	{
 		paramA = (i_point.X * lineB.Y - i_point.Y * lineB.X) / (lineA.X * lineB.Y - lineA.Y * lineB.X);
 		if (lineB.X != 0)
@@ -44,7 +44,7 @@ int GeometryUtility::IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_
 		}
 		resultC = paramA * lineA.Z + paramB * lineB.Z - i_point.Z;
 	}
-	else if ((lineA.X * lineB.Z - lineA.Z * lineB.X) != 0)
+	else if (eps(lineA.X * lineB.Z - lineA.Z * lineB.X) != 0)
 	{
 		paramA = (i_point.X * lineB.Z - i_point.Z * lineB.X) / (lineA.X * lineB.Z - lineA.Z * lineB.X);
 		if (lineB.X != 0)
@@ -624,11 +624,11 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 	i_addedMesh.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);
 	i_addedMesh.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
 
-	//m_vertexBorder[2] = m_vertexBorder[0];
-	//for (int vi = 0; vi < resultB.ProcVertexBuffer.Num(); vi++)
-	//{
-	//	m_vertexBorder[2].Add(m_vertexBorder[1][vi] + resultA.ProcVertexBuffer.Num());
-	//}
+	m_vertexBorder[2] = m_vertexBorder[0];
+	for (int vi = 0; vi < resultB.ProcVertexBuffer.Num(); vi++)
+	{
+		m_vertexBorder[2].Add(m_vertexBorder[1][vi] + resultA.ProcVertexBuffer.Num());
+	}
 
 	TArray<sortVertex<FVector>> p;
 	p.Empty();
@@ -679,16 +679,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 		}
 		else
 		{
-			if (p[pi].index >= resultA.ProcVertexBuffer.Num())
-			{
-				if (p[pi - 1].index >= resultA.ProcVertexBuffer.Num())
-				{
-					BorderLink(m_vertexBorder[1], p[pi - 1].index - resultA.ProcVertexBuffer.Num(), p[pi].index - resultA.ProcVertexBuffer.Num());
-				}
-			}
-			else {
-				BorderLink(m_vertexBorder[0], p[pi].index, p[pi - 1].index);
-			}
+			BorderLink(m_vertexBorder[2], p[pi].index, p[pi - 1].index);
 		}
 		int status = (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
 		vertexPlaneStatus[newIndexNum] |= 1 << status;
@@ -696,8 +687,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 	}
 	for (int pi = 1; pi < p.Num(); pi++)
 	{
-		int status = (int)((p[pi].index >= resultA.ProcVertexBuffer.Num()));
-		int ff = FindFather(m_vertexBorder[status], p[pi].index - status * resultA.ProcVertexBuffer.Num()) + status * resultA.ProcVertexBuffer.Num();
+		int ff = FindFather(m_vertexBorder[2], p[pi].index);
 		vertexPlaneStatus[rIndex[ff]] = FMath::Max(vertexPlaneStatus[rIndex[ff]], vertexPlaneStatus[rIndex[p[pi].index]]);
 	}
 	int last = -1;
@@ -706,7 +696,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 		if (planeAStatus[j] == 4)
 		{
 
-			int fa = FindFather(m_vertexBorder[0], j);
+			int fa = FindFather(m_vertexBorder[2], j);
 
 			UE_LOG(LogTemp, Log, TEXT("%d %d %s"), j, fa, *(resultA.ProcVertexBuffer[j].Position.ToString()));
 
@@ -718,9 +708,9 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 		if (planeBStatus[j] == 4)
 		{
 
-			int fa = FindFather(m_vertexBorder[1], j);
+			int fa = FindFather(m_vertexBorder[2], j + resultA.ProcVertexBuffer.Num());
 
-			UE_LOG(LogTemp, Log, TEXT("%d %d %s"), j, fa, *(resultB.ProcVertexBuffer[j].Position.ToString()));
+			UE_LOG(LogTemp, Log, TEXT("%d %d %s"), j + resultA.ProcVertexBuffer.Num(), fa, *(resultB.ProcVertexBuffer[j].Position.ToString()));
 
 		}
 
@@ -742,9 +732,9 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 			DrawDebugLine(m_world, va.Position, vb.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
 			DrawDebugLine(m_world, vb.Position, vc.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
 			DrawDebugLine(m_world, vc.Position, va.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
-			int fa = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j]);
-			int fb = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 1]);
-			int fc = FindFather(m_vertexBorder[0], resultA.ProcIndexBuffer[j + 2]);
+			int fa = FindFather(m_vertexBorder[2], resultA.ProcIndexBuffer[j]);
+			int fb = FindFather(m_vertexBorder[2], resultA.ProcIndexBuffer[j + 1]);
+			int fc = FindFather(m_vertexBorder[2], resultA.ProcIndexBuffer[j + 2]);
 			if ((planeAStatus[resultA.ProcIndexBuffer[j]] == 3 ||
 				planeAStatus[resultA.ProcIndexBuffer[j + 1]] == 3 ||
 				planeAStatus[resultA.ProcIndexBuffer[j + 2]] == 3) ||
@@ -772,16 +762,22 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 	{
 		for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
 		{
-			int fa = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j]);
-			int fb = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 1]);
-			int fc = FindFather(m_vertexBorder[1], resultB.ProcIndexBuffer[j + 2]);
+			int fa = FindFather(m_vertexBorder[2], resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num());
+			int fb = FindFather(m_vertexBorder[2], resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num());
+			int fc = FindFather(m_vertexBorder[2], resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num());
+			auto va = resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[j]];
+			auto vb = resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[j + 1]];
+			auto vc = resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[j + 2]];
 
+			DrawDebugLine(m_world, va.Position, vb.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, vb.Position, vc.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, vc.Position, va.Position, FColor(0, 0, 0, 1), true, -1, 0, 10);
 			if ((planeBStatus[resultB.ProcIndexBuffer[j]] == 3 ||
 				planeBStatus[resultB.ProcIndexBuffer[j + 1]] == 3 ||
 				planeBStatus[resultB.ProcIndexBuffer[j + 2]] == 3) ||
-				(vertexPlaneStatus[rIndex[fa + resultA.ProcVertexBuffer.Num()]] == 3 &&
-					vertexPlaneStatus[rIndex[fb + resultA.ProcVertexBuffer.Num()]] == 3 &&
-					vertexPlaneStatus[rIndex[fc + resultA.ProcVertexBuffer.Num()]] == 3))
+				(vertexPlaneStatus[rIndex[fa]] == 3 &&
+					vertexPlaneStatus[rIndex[fb]] == 3 &&
+					vertexPlaneStatus[rIndex[fc]] == 3))
 			{
 				if (fa != fb || fb != fc)
 				{
