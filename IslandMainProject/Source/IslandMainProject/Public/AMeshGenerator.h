@@ -33,5 +33,7 @@ public:
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		int m_blockID;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		int m_iteration;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UProceduralMeshComponent* m_mesh;
 };

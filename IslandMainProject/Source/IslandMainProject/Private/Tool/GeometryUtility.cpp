@@ -835,5 +835,172 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_finalMesh, 
 			}
 		}
 	}
+
 	return i_finalMesh;
 }
+
+void GeometryUtility::hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, float alpha, float beta)
+{
+	TArray<DVector> wv;
+	TArray<DVector> bv;
+	TArray<DVector> sv;
+	wv.Empty();
+	bv.Empty();
+	sv.Empty();
+	for (int i = 0; i < i_in.ProcVertexBuffer.Num(); i++)
+	{ 
+		sv.Add(i_in.ProcVertexBuffer[i].Position);
+	}
+	bv.Init(DVector(), sv.Num());
+
+	wv = laplacianFilter(sv, i_in.ProcIndexBuffer);
+	for (int i = 0; i < wv.Num(); i++)
+	{
+		bv[i].X = wv[i].X - (alpha * sv[i].X + (1 - alpha) * sv[i].X);
+		bv[i].Y = wv[i].Y - (alpha * sv[i].Y + (1 - alpha) * sv[i].Y);
+		bv[i].Z = wv[i].Z - (alpha * sv[i].Z + (1 - alpha) * sv[i].Z);
+	}
+	TArray<DVector> adjacentVertices;
+	TArray<uint32> adjacentIndexes;
+	adjacentIndexes.Empty();
+	double dx = 0.0f;
+	double dy = 0.0f;
+	double dz = 0.0f;
+
+	for (int j = 0; j < bv.Num(); j++)
+	{
+		adjacentIndexes.Empty();
+
+		findAdjacentNeighbors(sv, i_in.ProcIndexBuffer, sv[j], adjacentVertices, adjacentIndexes);
+		dx = 0.0f;
+		dy = 0.0f;
+		dz = 0.0f;
+
+		for (int k = 0; k < adjacentIndexes.Num(); k++)
+		{
+			dx += bv[adjacentIndexes[k]].X;
+			dy += bv[adjacentIndexes[k]].Y;
+			dz += bv[adjacentIndexes[k]].Z;
+
+		}
+
+		wv[j].X -= beta * bv[j].X + ((1 - beta) / adjacentIndexes.Num()) * dx;
+		wv[j].Y -= beta * bv[j].Y + ((1 - beta) / adjacentIndexes.Num()) * dy;
+		wv[j].Z -= beta * bv[j].Z + ((1 - beta) / adjacentIndexes.Num()) * dz;
+	}
+	o_out = i_in;
+	for (int i = 0; i < wv.Num(); i++)
+	{
+		o_out.ProcVertexBuffer[i].Position = wv[i].FVectorConversion();
+	}
+}
+
+TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices)
+{
+
+	TArray<DVector> wv;
+	wv.Init(DVector(), i_vertices.Num());
+
+
+	float dx = 0.0f;
+	float dy = 0.0f;
+	float dz = 0.0f;
+	TArray<DVector> adjacentVertices;
+	TArray<uint32> adjacentIndices;
+	for (int vi = 0; vi < i_vertices.Num(); vi++)
+	{
+		// Find the sv neighboring vertices
+		findAdjacentNeighbors(i_vertices, i_indices, i_vertices[vi], adjacentVertices, adjacentIndices);
+
+		if (adjacentVertices.Num() != 0)
+		{
+			dx = 0.0f;
+			dy = 0.0f;
+			dz = 0.0f;
+
+
+			// Add the vertices and divide by the number of vertices
+			for (int j = 0; j < adjacentVertices.Num(); j++)
+			{
+				dx += adjacentVertices[j].X;
+				dy += adjacentVertices[j].Y;
+				dz += adjacentVertices[j].Z;
+			}
+
+			wv[vi].X = dx / adjacentVertices.Num();
+			wv[vi].Y = dy / adjacentVertices.Num();
+			wv[vi].Z = dz / adjacentVertices.Num();
+		}
+	}
+
+	return wv;
+}
+
+void GeometryUtility::findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>& adjacentI)
+{
+	TSet<int32> indicesSet;
+	adjacentV.Empty();
+	adjacentI.Empty();
+	// Find matching vertices
+	for (int i = 0; i < i_vertices.Num(); i++)
+	{
+		if (i_vertices[i] == vertex)
+		{
+			int32 v1 = 0;
+			int32 v2 = 0;
+			bool marker = false;
+			for (int k = 0; k < i_indices.Num(); k = k + 3)
+			{
+				v1 = 0;
+				v2 = 0;
+				marker = false;
+
+				if (i == i_indices[k])
+				{
+					v1 = i_indices[k + 1];
+					v2 = i_indices[k + 2];
+					marker = true;
+				}
+
+				if (i == i_indices[k + 1])
+				{
+					v1 = i_indices[k];
+					v2 = i_indices[k + 2];
+					marker = true;
+				}
+
+				if (i == i_indices[k + 2])
+				{
+					v1 = i_indices[k];
+					v2 = i_indices[k + 1];
+					marker = true;
+				}
+
+				if (marker)
+				{
+					indicesSet.Add(v1);
+					indicesSet.Add(v2);
+				}
+			}
+		}
+	}
+	for (auto& Elem : indicesSet)
+	{
+		adjacentI.Add(Elem);
+		bool exist = false;
+		for (int i = 0; i < adjacentV.Num(); i++)
+		{
+			if (adjacentV[i] == i_vertices[Elem])
+			{
+				exist = true;
+				break;
+			}
+		}
+		if (!exist)
+		{
+			adjacentV.Add(i_vertices[Elem]);
+		}
+		
+	}
+}
+

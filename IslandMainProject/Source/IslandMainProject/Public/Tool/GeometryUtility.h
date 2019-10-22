@@ -67,6 +67,9 @@ public:
 	static int m_block;
 	static int AddNewVertex(TArray<DVertex>& o_vertices, DVertex newData);
 	static void BorderLink(TArray<int>& i_disjointSetStatus, TMap<int, int>& i_indexPartitionPointMapping, TArray<int>& i_intersetctionsStatus, int i_indexA, int i_indexB);
+	static void hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, float alpha, float beta);
+	static TArray<DVector> laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
+ 	static void findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>&adjacentI);
 
 };
 

@@ -15,6 +15,7 @@ AAMeshGenerator::AAMeshGenerator()
 	m_mesh->bUseAsyncCooking = true;
 	m_mesh->ClearAllMeshSections();
 	m_blockID = -1;
+	m_iteration = 1;
 	
 }
 
@@ -99,6 +100,11 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 		FProcMeshSection addedMesh = *(m_mesh->GetProcMeshSection(i));
 
 		finalMesh = GeometryUtility::MeshCombination(finalMesh, addedMesh, m_insertMode);
+	}
+	
+	for (int i = 0; i < m_iteration; i++)
+	{
+		GeometryUtility::hcFilter(finalMesh, finalMesh, 0, 0.5);
 	}
 	m_mesh->ClearAllMeshSections();
 	AddMeshSection(0, finalMesh, FTransform());
