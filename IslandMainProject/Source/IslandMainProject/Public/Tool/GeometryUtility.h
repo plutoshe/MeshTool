@@ -29,6 +29,7 @@ public:
 		return 0;
 
 	}
+
 	template <class T>
 	class sortVertex {
 	public:
@@ -46,11 +47,9 @@ public:
 	static int IsPointInTriangle(DVector i_point, DVector i_v0, DVector i_v1, DVector i_v2);
 	static bool IsPointInPolyhedron(DVector i_vertices, const FProcMeshSection& i_mesh);
 	static void TraingleIntersectPolyhedron(
-		TArray<DVector> i_vertex, 
-		TArray<uint32> i_indices, 
 		const FProcMeshSection& i_b, 
-		TArray<DVector> &o_generateVertices,
-		TArray<uint32> &o_generateIndices);	
+		TArray<FProcMeshVertex> &o_vertices,
+		TArray<uint32> &o_indices);	
 	static void MeshSectionIntersection(
 		const FProcMeshSection& i_a, 
 		const FProcMeshSection& i_b, 
@@ -63,8 +62,10 @@ public:
 	static TArray<int> m_vertexBorder[3];
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
-	static void BorderLink(TArray<int>& i_status, int i_a, int i_b);
+	static void DisjointSetLink(TArray<int>& i_status, int i_a, int i_b);
 	static int m_block;
+	static int AddNewVertex(TArray<FProcMeshVertex>& o_vertices, FProcMeshVertex newData);
+	static void BorderLink(TArray<int>& i_disjointSetStatus, TMap<int, int>& i_indexPartitionPointMapping, TArray<int>& i_intersetctionsStatus, int i_indexA, int i_indexB);
 
 };
 
@@ -107,4 +108,10 @@ public:
 	}
 	void Normalize() { double size = Size(); *this = *this / size; }
 	FVector FVectorConversion() { return FVector(X, Y, Z); }
+};
+
+class partitionPointST {
+	DVector m_data;
+	int m_intersetionIndex;
+	int m_index;
 };
