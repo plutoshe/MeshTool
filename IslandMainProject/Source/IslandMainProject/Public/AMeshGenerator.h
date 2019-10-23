@@ -25,6 +25,9 @@ protected:
 public:	
 	UFUNCTION(BlueprintCallable, Category = "Tool|MeshGeneration")
 		void AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_transform);
+	UFUNCTION(BlueprintCallable, Category = "Tool|MeshGeneration")
+		void Smooth();
+
 	void AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform& i_transform);
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

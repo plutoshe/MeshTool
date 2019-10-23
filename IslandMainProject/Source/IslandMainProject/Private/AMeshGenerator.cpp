@@ -78,6 +78,28 @@ void AAMeshGenerator::AddMeshSection(int i_id, const FProcMeshSection& i_src, co
 	m_mesh->CreateMeshSection_LinearColor(i_id, vertices, Triangles, normals, UV0, vertexColors, tangents, true);
 }
 
+void AAMeshGenerator::Smooth()
+{
+	TArray< FProcMeshSection> newMeshs;
+	newMeshs.Empty();
+	for (int mi = 0; mi < m_mesh->GetNumSections(); mi++)
+	{
+		newMeshs.Add(*(m_mesh->GetProcMeshSection(mi)));
+	}
+	for (int i = 0; i < m_iteration; i++)
+	{
+		for (int mi = 0; mi < newMeshs.Num(); mi++)
+			/*m_mesh->UpdateMeshSection()*/
+			GeometryUtility::hcFilter(newMeshs[mi], newMeshs[mi], 0.2, 0.3);
+		
+	}
+	m_mesh->ClearAllMeshSections();
+	for (int mi = 0; mi < newMeshs.Num(); mi++)
+	{
+		AddMeshSection(mi, newMeshs[mi], FTransform());
+	}
+}
+
 void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_transform)
 {
 	if (i_addMesh == nullptr)
@@ -102,10 +124,7 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 		finalMesh = GeometryUtility::MeshCombination(finalMesh, addedMesh, m_insertMode);
 	}
 	
-	for (int i = 0; i < m_iteration; i++)
-	{
-		GeometryUtility::hcFilter(finalMesh, finalMesh, 0, 0.5);
-	}
+
 	m_mesh->ClearAllMeshSections();
 	AddMeshSection(0, finalMesh, FTransform());
 }

@@ -51,15 +51,10 @@ public:
 		const FProcMeshSection& i_b, 
 		TArray<DVertex> &o_vertices,
 		TArray<uint32> &o_indices);	
-	static void MeshSectionIntersection(
-		const FProcMeshSection& i_a, 
-		const FProcMeshSection& i_b, 
-		FProcMeshSection& o_result, 
-		TArray<int>& t_planeAStatus, 
-		TArray<int>& t_planeBStatus);
+	static void MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<bool>& o_oldvertexIdentifier);
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_planePoint, const DVector& i_planeNormal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
-	static FProcMeshSection MeshCombination(FProcMeshSection i_finalMesh, FProcMeshSection i_addedMesh, int i_insertMode);
+	static FProcMeshSection MeshCombination(FProcMeshSection i_meshA, FProcMeshSection i_meshB, int i_insertMode);
 	static TArray<int> m_vertexBorder[2];
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
@@ -124,12 +119,14 @@ class partitionPointST {
 class DVertex {
 public:
 	DVector m_Position;
+	DVector m_normal;
 	DVertex() : m_Position() {}
 	DVertex(const DVertex& i_v) : m_Position(i_v.m_Position) {}
 	DVertex(const FProcMeshVertex& i_v) { Equal(i_v); }
 	void Equal(const FProcMeshVertex& i_v)
 	{
 		m_Position = i_v.Position;
+		m_normal = i_v.Normal;
 
 	}
 	void operator = (const FProcMeshVertex& i_v) 
@@ -140,6 +137,7 @@ public:
 	{
 		auto a = FProcMeshVertex();
 		a.Position = m_Position.FVectorConversion();
+		a.Normal = m_normal.FVectorConversion();
 		return a;
 	}
 };
