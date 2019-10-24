@@ -174,6 +174,8 @@ bool GeometryUtility::GetLineAndLineIntersectionPoint(const DVector& i_va, const
 	double t2 = (-parallelParam * ParamA + ParamB) / (parallelParam * parallelParam - 1);
 	o_intersection = line1 * t1 + i_linea;
 	DVector db = i_va + line2 * t2;
+	auto s1 = DVector::DotProduct(i_lineb - i_linea, line1);
+	auto s2 = DVector::DotProduct(i_vb - i_va, line2) - t2;
 	if (o_intersection == db)
 	{
 		if (eps(t1) >= 0 && eps(DVector::DotProduct(i_lineb - i_linea, line1) - t1) >= 0 &&
@@ -468,12 +470,12 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	for (int i = 0; i < i_a.ProcIndexBuffer.Num() - 2; i += 3)
 	{
 		// for test
-		{
+	/*	{
 			if (m_block != -1 && i / 3 != m_block)
 			{
 				continue;
 			}
-		}
+		}*/
 		for (int j = 0; j < 3; j++)
 		{
 			triangleIndicesArray[j] = i_a.ProcIndexBuffer[i + j];
@@ -489,9 +491,9 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	int filteringVerticesNum = 0;
 	for (int i = 0; i < addedVertices.Num(); i++) {
 		indexConvdersion[i] = filteringVerticesNum;
+
 		if (i >= i_a.ProcVertexBuffer.Num() || !verticesInPlaneStatus[i])
 		{
-				
 			o_result.ProcVertexBuffer.Add(addedVertices[i].ToProcVertex());
 			if (i >= i_a.ProcVertexBuffer.Num())
 			{
@@ -516,6 +518,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 				isInMesh = isInMesh || verticesInPlaneStatus[addedIndices[i + j]];
 			}
 		}
+		
 		if (!isInMesh)
 		{
 			o_result.ProcIndexBuffer.Add(indexConvdersion[addedIndices[i]]);
@@ -638,21 +641,19 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 				auto vb = resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 1]];
 				auto vc = resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 2]];
 				DVector meshMiddlePoint = (va.Position + vb.Position + vc.Position) / 3;
-				DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				/*DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
 				DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-				DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);*/
 				
-				/*if ((vertexOldIdentifierA[resultA.ProcIndexBuffer[j]] ||
+				if ((vertexOldIdentifierA[resultA.ProcIndexBuffer[j]] ||
 					vertexOldIdentifierA[resultA.ProcIndexBuffer[j + 1]] ||
 					vertexOldIdentifierA[resultA.ProcIndexBuffer[j + 2]]) || !IsPointInPolyhedron(meshMiddlePoint, i_meshB))
 				{
 					finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j]]);
 					finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j + 1]]);
 					finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j + 2]]);
-				}*/
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j]]);
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j + 1]]);
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultA.ProcIndexBuffer[j + 2]]);
+				}
+				
 			}
 		}
 		if (i_insertMode != 2)
@@ -664,20 +665,18 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 				auto vb = resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[j + 1]];
 				auto vc = resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[j + 2]];
 				DVector meshMiddlePoint = (va.Position + vb.Position + vc.Position) / 3;
-				DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-				DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-				DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-				//if (vertexOldIdentifierB[resultB.ProcIndexBuffer[j]] ||
-				//	vertexOldIdentifierB[resultB.ProcIndexBuffer[j + 1]] ||
-				//	vertexOldIdentifierB[resultB.ProcIndexBuffer[j + 2]] || !IsPointInPolyhedron(meshMiddlePoint, i_meshA))
-				//{
-				//	finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
-				//	finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
-				//	finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
-				//}
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
-				finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
+				//DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				//DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				//DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				if (vertexOldIdentifierB[resultB.ProcIndexBuffer[j]] ||
+					vertexOldIdentifierB[resultB.ProcIndexBuffer[j + 1]] ||
+					vertexOldIdentifierB[resultB.ProcIndexBuffer[j + 2]] || !IsPointInPolyhedron(meshMiddlePoint, i_meshA))
+				{
+					finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j] + resultA.ProcVertexBuffer.Num()]);
+					finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 1] + resultA.ProcVertexBuffer.Num()]);
+					finalResult.ProcIndexBuffer.Add(reversedIndex[resultB.ProcIndexBuffer[j + 2] + resultA.ProcVertexBuffer.Num()]);
+				}
+	
 			}
 		}
 	}
@@ -757,6 +756,10 @@ TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TAr
 	TArray<uint32> adjacentIndices;
 	for (int vi = 0; vi < i_vertices.Num(); vi++)
 	{
+		wv[vi] = i_vertices[vi];
+		//if (vi != m_block) {
+		//	continue;
+		//}
 		// Find the sv neighboring vertices
 		findAdjacentNeighbors(i_vertices, i_indices, i_vertices[vi], adjacentVertices, adjacentIndices);
 
@@ -778,11 +781,9 @@ TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TAr
 			wv[vi].X = dx / adjacentVertices.Num();
 			wv[vi].Y = dy / adjacentVertices.Num();
 			wv[vi].Z = dz / adjacentVertices.Num();
+			//wv[vi] = wv[vi] + FVector(10, 10, 10);
 		}
-		else
-		{
-			wv[vi] = i_vertices[vi];
-		}
+	
 	}
 
 	return wv;
@@ -856,3 +857,81 @@ void GeometryUtility::findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<u
 	}
 }
 
+bool GeometryUtility::DivisionSegment(
+	FProcMeshSection& o_out,
+	FProcMeshVertex va,
+	FProcMeshVertex vb,
+	int32 ia,
+	int32 ib,
+	int32 ic,
+	float i_percision)
+{
+	float dist = FVector::Distance(va.Position, vb.Position);
+	if (eps(dist - i_percision) > 0)
+	{
+		FVector unit = vb.Position - va.Position;
+		unit.Normalize();
+		int32 lastI = ia;
+		for (int32 i = 0; i < FMath::FloorToInt(dist / i_percision); i++) 
+		{
+			FProcMeshVertex newv = va;
+			newv.Position += (i + 1) * unit * i_percision;
+			o_out.ProcIndexBuffer.Add(lastI);
+			lastI = o_out.ProcVertexBuffer.Num();
+			o_out.ProcIndexBuffer.Add(lastI);
+			o_out.ProcIndexBuffer.Add(ic);
+			o_out.ProcVertexBuffer.Add(newv);
+			
+		}
+		o_out.ProcIndexBuffer.Add(lastI);
+		o_out.ProcIndexBuffer.Add(ib);
+		o_out.ProcIndexBuffer.Add(ic);
+		return true;
+	}
+	return false;
+}
+
+void GeometryUtility::Division(FProcMeshSection i_in, FProcMeshSection& o_out, float i_percision)
+{
+	o_out = i_in;
+	int i = 0;
+	TSet<FString> needDivisionSegments;
+	while (i < o_out.ProcIndexBuffer.Num() - 2)
+	{
+		auto ia = o_out.ProcIndexBuffer[i];
+		auto ib = o_out.ProcIndexBuffer[i + 1];
+		auto ic = o_out.ProcIndexBuffer[i + 2];
+		auto va = o_out.ProcVertexBuffer[ia];
+		auto vb = o_out.ProcVertexBuffer[ib];
+		auto vc = o_out.ProcVertexBuffer[ic];
+		bool exist = false;
+		if (DivisionSegment(o_out, va, vb, ia, ib, ic, i_percision) ||
+			DivisionSegment(o_out, vb, vc, ib, ic, ia, i_percision) ||
+			DivisionSegment(o_out, vc, va, ic, ia, ib, i_percision))
+		{
+			o_out.ProcIndexBuffer.RemoveAt(i, 3);
+		}
+		else
+		{
+			i += 3;
+		}
+		
+		//if ()
+
+	}
+}
+
+void GeometryUtility::OutputMesh(const FProcMeshSection& i_mesh, UWorld* i_world, FColor i_color, FVector i_offset)
+{
+	for (int k = 0; k < i_mesh.ProcIndexBuffer.Num() - 2; k += 3)
+	{
+		//if (i_mesh.ProcIndexBuffer[k] == 10 || i_mesh.ProcIndexBuffer[k + 1] == 10 || i_mesh.ProcIndexBuffer[k + 2] == 10)
+		//{ 
+			FVector va = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[k]].Position;
+			FVector vb = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[k + 1]].Position;
+			FVector vc = i_mesh.ProcVertexBuffer[i_mesh.ProcIndexBuffer[k + 2]].Position;
+			DrawDebugLine(i_world, va + i_offset, vb + i_offset, i_color, true, -1, 0, 10);
+			DrawDebugLine(i_world, vb + i_offset, vc + i_offset, i_color, true, -1, 0, 10);
+			DrawDebugLine(i_world, vc + i_offset, va + i_offset, i_color, true, -1, 0, 10);
+	}
+}

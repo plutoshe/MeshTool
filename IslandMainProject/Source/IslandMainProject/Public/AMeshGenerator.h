@@ -27,6 +27,8 @@ public:
 		void AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_transform);
 	UFUNCTION(BlueprintCallable, Category = "Tool|MeshGeneration")
 		void Smooth();
+	UFUNCTION(BlueprintCallable, Category = "Tool|MeshGeneration")
+		void Division();
 
 	void AddMeshSection(int i_id, const FProcMeshSection& i_src, const FTransform& i_transform);
 	// Called every frame
@@ -37,6 +39,12 @@ public:
 		int m_blockID;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		int m_iteration;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		float m_percision;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		float m_alpha;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		float m_beta;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UProceduralMeshComponent* m_mesh;
 };

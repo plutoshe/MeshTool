@@ -65,7 +65,16 @@ public:
 	static void hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, float alpha, float beta);
 	static TArray<DVector> laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
  	static void findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>&adjacentI);
-
+	static void Division(FProcMeshSection i_in, FProcMeshSection& o_out, float i_percision);
+	static bool DivisionSegment(
+		FProcMeshSection& o_out,
+		FProcMeshVertex va,
+		FProcMeshVertex vb,
+		int32 ia,
+		int32 ib,
+		int32 ic,
+		float i_percision);
+	static void OutputMesh(const FProcMeshSection& i_mesh, UWorld* i_world, FColor i_color = FColor(0, 0, 0, 1), FVector i_offset = FVector(0, 0, 0));
 };
 
 class DVector
