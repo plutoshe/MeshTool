@@ -17,9 +17,10 @@ AAMeshGenerator::AAMeshGenerator()
 	m_mesh->ClearAllMeshSections();
 	m_blockID = -1;
 	m_iteration = 1;
-	m_percision = 200;
+	m_percision = 40;
 	m_alpha = 0.5;
 	m_beta = 0.8;
+	m_addSmoothNum = 0;
 	
 }
 
@@ -93,7 +94,9 @@ void AAMeshGenerator::Division()
 
 	for (int mi = 0; mi < newMeshs.Num(); mi++)
 	{
-		GeometryUtility::Division(newMeshs[mi], newMeshs[mi], m_percision);
+		int dividedVertexNum = newMeshs[mi].ProcVertexBuffer.Num();
+		for (int i = 0; i < dividedVertexNum; i++)
+			GeometryUtility::DivisionPointFaces(newMeshs[mi], i, m_percision, m_addSmoothNum);
 	}
 	
 	m_mesh->ClearAllMeshSections();
@@ -131,17 +134,17 @@ void AAMeshGenerator::Smooth()
 		for (int j = 0; j < newMeshs.Num(); j++)
 		{
 			auto i_mesh = newMeshs[j];
-			GeometryUtility::OutputMesh(i_mesh, GetWorld(), FColor(0, 1, 1, 0), FVector(-2000, 2000, 200));
+			//GeometryUtility::OutputMesh(i_mesh, GetWorld(), FColor(0, 1, 1, 0), FVector(-2000, 2000, 200));
 		}
 		for (int mi = 0; mi < newMeshs.Num(); mi++)
 			/*m_mesh->UpdateMeshSection()*/
 			GeometryUtility::hcFilter(newMeshs[mi], newMeshs[mi], m_alpha, m_beta);
 		
-		for (int j = 0; j < newMeshs.Num(); j++)
+	/*	for (int j = 0; j < newMeshs.Num(); j++)
 		{
 			auto i_mesh = newMeshs[j];
 			GeometryUtility::OutputMesh(i_mesh, GetWorld(), FColor(1,0,0,0), FVector(2000, 2000, 200));
-		}
+		}*/
 		
 
 	}

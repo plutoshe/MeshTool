@@ -66,13 +66,23 @@ public:
 	static TArray<DVector> laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
  	static void findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>&adjacentI);
 	static void Division(FProcMeshSection i_in, FProcMeshSection& o_out, float i_percision);
+	static void DivisionPointSegment(
+		FProcMeshSection& o_out,
+		TMap<int32, TPair<int32, int32>>& o_divisionMap,
+		int i_index,
+		const FProcMeshVertex& i_origin,
+		int32& o_start,
+		int32& o_num,
+		float i_percision,
+		int i_addedSegmentNum);
+	static void DivisionPointFaces(FProcMeshSection& o_out, int32 i_centerPointIndex, float i_percision, int i_addFaceNum);
 	static bool DivisionSegment(
 		FProcMeshSection& o_out,
-		FProcMeshVertex va,
-		FProcMeshVertex vb,
-		int32 ia,
-		int32 ib,
-		int32 ic,
+		FProcMeshVertex i_va,
+		FProcMeshVertex i_vb,
+		int32 i_ia,
+		int32 i_ib,
+		int32 i_ic,
 		float i_percision);
 	static void OutputMesh(const FProcMeshSection& i_mesh, UWorld* i_world, FColor i_color = FColor(0, 0, 0, 1), FVector i_offset = FVector(0, 0, 0));
 };

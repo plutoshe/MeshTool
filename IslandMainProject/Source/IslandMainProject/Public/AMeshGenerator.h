@@ -40,6 +40,8 @@ public:
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		int m_iteration;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		int m_addSmoothNum;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		float m_percision;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		float m_alpha;

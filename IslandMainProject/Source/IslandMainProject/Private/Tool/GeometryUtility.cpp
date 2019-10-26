@@ -857,35 +857,172 @@ void GeometryUtility::findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<u
 	}
 }
 
+void GeometryUtility::DivisionPointSegment(FProcMeshSection& o_out, TMap<int32, TPair<int32, int32>>& o_divisionMap, int i_index, const FProcMeshVertex& i_origin, int32& o_start, int32& o_num, float i_percision, int i_addedSegmentNum)
+{
+	if (o_divisionMap.Contains(i_index))
+	{
+		o_start = o_divisionMap[i_index].Key;
+		o_num = o_divisionMap[i_index].Value;
+	}
+	else
+	{
+		FVector v1 = o_out.ProcVertexBuffer[i_index].Position;
+
+		int32 di = -1;
+		int32 dn = 0;
+		FVector s = i_origin.Position;
+		FVector dir = (v1 - s);
+		FProcMeshVertex newV = i_origin;
+		dir.Normalize();
+		while (FVector::Distance(s, v1) > i_percision)
+		{
+			s += dir * i_percision;
+			newV.Position = s;
+			o_out.ProcVertexBuffer.Add(newV);
+			dn++;
+			if (di == -1)
+			{
+				di = o_out.ProcVertexBuffer.Num() - 1;
+			}
+
+			if (dn >= i_addedSegmentNum)
+			{
+				break;
+			}
+		}
+		o_start = di;
+		o_num = dn;
+		o_divisionMap.Add(i_index, TPair<int32, int32>(di, dn));
+	}
+}
+
+void GeometryUtility::DivisionPointFaces(FProcMeshSection& o_out, int32 i_centerPointIndex, float i_percision, int i_addFaceNum)
+{
+	int i = 0;
+	FProcMeshVertex origin = o_out.ProcVertexBuffer[i_centerPointIndex];
+	TMap<int32, TPair<int, int>> divisionMap;
+	divisionMap.Empty();
+	int originFaceNum = o_out.ProcIndexBuffer.Num();
+	while (i < originFaceNum - 2)
+	{
+		int32 ia = o_out.ProcIndexBuffer[i];
+		int32 ib = o_out.ProcIndexBuffer[i + 1];
+		int32 ic = o_out.ProcIndexBuffer[i + 2];
+		int32 pa, pb;
+		bool exist = false;
+		if (ia == i_centerPointIndex)
+		{
+			exist = true;
+			pa = ib;
+			pb = ic;
+		}
+		if (ib == i_centerPointIndex)
+		{
+			exist = true;
+			pa = ic;
+			pb = ia;
+		}
+		if (ic == i_centerPointIndex)
+		{
+			exist = true;
+			pa = ia;
+			pb = ib;
+		}
+		if (exist)
+		{
+			int startSegementA, startSegementB;
+			int numSegementA, numSegementB;
+
+			DivisionPointSegment(o_out, divisionMap, pa, origin, startSegementA, numSegementA, i_percision, i_addFaceNum);
+			DivisionPointSegment(o_out, divisionMap, pb, origin, startSegementB, numSegementB, i_percision, i_addFaceNum);
+			if (numSegementA != 0 || numSegementB != 0)
+			{
+				originFaceNum -= 3;
+				o_out.ProcIndexBuffer.RemoveAt(i, 3);
+				int jA = 0;
+				int jB = 0;
+				int lastA = i_centerPointIndex;
+				int lastB = i_centerPointIndex;
+				while (jA <= numSegementA || jB <= numSegementB)
+				{
+					int indexEnumerationOnSegementA = startSegementA + jA;
+					if (jA >= numSegementA)
+					{
+						indexEnumerationOnSegementA = pa;
+					}
+					int indexEnumerationOnSegementB = startSegementB + jB;
+					if (jB >= numSegementB)
+					{
+						indexEnumerationOnSegementB = pb;
+					}
+					jA++; jB++;
+					if (lastA == lastB)
+					{
+						o_out.ProcIndexBuffer.Add(lastA);
+						o_out.ProcIndexBuffer.Add(indexEnumerationOnSegementA);
+						o_out.ProcIndexBuffer.Add(indexEnumerationOnSegementB);
+					}
+					else
+					{
+						if (lastA != indexEnumerationOnSegementA)
+						{
+							o_out.ProcIndexBuffer.Add(lastA);
+							o_out.ProcIndexBuffer.Add(indexEnumerationOnSegementA);
+							o_out.ProcIndexBuffer.Add(indexEnumerationOnSegementB);
+						}
+						if (lastB != indexEnumerationOnSegementB)
+						{
+							o_out.ProcIndexBuffer.Add(lastA);
+							o_out.ProcIndexBuffer.Add(indexEnumerationOnSegementB);
+							o_out.ProcIndexBuffer.Add(lastB);
+						}
+					}
+					lastA = indexEnumerationOnSegementA;
+					lastB = indexEnumerationOnSegementB;
+				}
+			}
+			else
+			{
+				i += 3;
+			}
+		}
+		else
+		{
+			i += 3;
+		}
+		
+	}
+}
+
 bool GeometryUtility::DivisionSegment(
 	FProcMeshSection& o_out,
-	FProcMeshVertex va,
-	FProcMeshVertex vb,
-	int32 ia,
-	int32 ib,
-	int32 ic,
+	FProcMeshVertex i_va,
+	FProcMeshVertex i_vb,
+	int32 i_ia,
+	int32 i_ib,
+	int32 i_ic,
 	float i_percision)
 {
-	float dist = FVector::Distance(va.Position, vb.Position);
+	float dist = FVector::Distance(i_va.Position, i_vb.Position);
 	if (eps(dist - i_percision) > 0)
 	{
-		FVector unit = vb.Position - va.Position;
+		FVector unit = i_vb.Position - i_va.Position;
 		unit.Normalize();
-		int32 lastI = ia;
+		int32 lastI = i_ia;
 		for (int32 i = 0; i < FMath::FloorToInt(dist / i_percision); i++) 
 		{
-			FProcMeshVertex newv = va;
+			FProcMeshVertex newv = i_va;
 			newv.Position += (i + 1) * unit * i_percision;
 			o_out.ProcIndexBuffer.Add(lastI);
 			lastI = o_out.ProcVertexBuffer.Num();
 			o_out.ProcIndexBuffer.Add(lastI);
-			o_out.ProcIndexBuffer.Add(ic);
+			o_out.ProcIndexBuffer.Add(i_ic);
 			o_out.ProcVertexBuffer.Add(newv);
 			
 		}
 		o_out.ProcIndexBuffer.Add(lastI);
-		o_out.ProcIndexBuffer.Add(ib);
-		o_out.ProcIndexBuffer.Add(ic);
+		o_out.ProcIndexBuffer.Add(i_ib);
+		o_out.ProcIndexBuffer.Add(i_ic);
 		return true;
 	}
 	return false;
