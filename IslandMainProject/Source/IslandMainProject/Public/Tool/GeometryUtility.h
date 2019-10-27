@@ -65,6 +65,9 @@ public:
 	static void hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, float alpha, float beta);
 	static TArray<DVector> centralFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
 	static TArray<DVector> laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
+	static TArray<DVector> laplacianFilterWithDistance(TArray<DVector> i_vertices, TArray<uint32> i_indices, float i_lambda = 1.0f);
+	/*static void laplacianFilterWithCurvatureFlow(TArray<DVector> i_vertices, TArray<uint32> i_indices);
+	static float GetCurveWeight(DVector origin, DVector adjcent, TArray<DVector>& adjVertices, TArray<uint32>& adjacentFaceIndex);*/
  	static void findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>&adjacentI);
 	static void findAdjacentFace(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<uint32>& adjacentFaceIndex);
 	static void Division(FProcMeshSection i_in, FProcMeshSection& o_out, float i_percision);

@@ -701,8 +701,8 @@ void GeometryUtility::hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, f
 	}
 	bv.Init(DVector(), sv.Num());
 
-	wv = centralFilter(sv, i_in.ProcIndexBuffer);
-	wv = laplacianFilter(sv, i_in.ProcIndexBuffer);
+	//wv = centralFilter(sv, i_in.ProcIndexBuffer);
+	wv = laplacianFilterWithDistance(sv, i_in.ProcIndexBuffer);
 	for (int i = 0; i < wv.Num(); i++)
 	{
 		bv[i].X = wv[i].X - (alpha * sv[i].X + (1 - alpha) * sv[i].X);
@@ -795,6 +795,58 @@ TArray<DVector> GeometryUtility::centralFilter(TArray<DVector> i_vertices, TArra
 	return wv;
 }
 
+TArray<DVector> GeometryUtility::laplacianFilterWithDistance(TArray<DVector> i_vertices, TArray<uint32> i_indices, float i_lambda)
+{
+
+	TArray<DVector> wv;
+	wv.Init(DVector(), i_vertices.Num());
+
+
+	float dx = 0.0f;
+	float dy = 0.0f;
+	float dz = 0.0f;
+	TArray<DVector> adjacentVertices;
+	TArray<uint32> adjacentIndices;
+	for (int vi = 0; vi < i_vertices.Num(); vi++)
+	{
+		wv[vi] = i_vertices[vi];
+		DVector origin = i_vertices[vi];
+		//if (vi != m_block) {
+		//	continue;
+		//}
+		// Find the sv neighboring vertices
+		findAdjacentNeighbors(i_vertices, i_indices, i_vertices[vi], adjacentVertices, adjacentIndices);
+		float sumWeight = 0.f;
+		if (adjacentVertices.Num() != 0)
+		{
+			dx = 0.0f;
+			dy = 0.0f;
+			dz = 0.0f;
+
+
+			// Add the vertices and divide by the number of vertices
+			for (int j = 0; j < adjacentVertices.Num(); j++)
+			{
+				float weight = FVector::Distance(origin.FVectorConversion(), adjacentVertices[j].FVectorConversion());
+				dx += weight * (adjacentVertices[j].X - origin.X);
+				dy += weight * (adjacentVertices[j].Y - origin.Y);
+				dz += weight * (adjacentVertices[j].Z - origin.Z);
+				sumWeight += weight;
+			}
+			dx /= sumWeight;
+			dy /= sumWeight;
+			dz /= sumWeight;
+			wv[vi].X = origin.X + i_lambda * dx;
+			wv[vi].Y = origin.Y + i_lambda * dy;
+			wv[vi].Z = origin.Z + i_lambda * dz;
+			//wv[vi] = wv[vi] + FVector(10, 10, 10);
+		}
+
+	}
+
+
+	return wv;
+}
 
 
 TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices)
