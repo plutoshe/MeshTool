@@ -577,6 +577,10 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 	TArray<int32> reversedIndex, vertexPlaneOccupationStatus;
 	// tackle final vertices of mesh
 	{
+		//for (int t = 0; t < resultB.ProcVertexBuffer.Num(); t++)
+		//{
+		//	resultB.ProcVertexBuffer[t].Position += FVector(1000, 1000, 0);
+		//}
 		resultCombine.ProcVertexBuffer.Empty();
 		resultCombine.ProcVertexBuffer.Append(resultA.ProcVertexBuffer);
 		resultCombine.ProcVertexBuffer.Append(resultB.ProcVertexBuffer);
@@ -697,6 +701,7 @@ void GeometryUtility::hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, f
 	}
 	bv.Init(DVector(), sv.Num());
 
+	wv = centralFilter(sv, i_in.ProcIndexBuffer);
 	wv = laplacianFilter(sv, i_in.ProcIndexBuffer);
 	for (int i = 0; i < wv.Num(); i++)
 	{
@@ -741,6 +746,56 @@ void GeometryUtility::hcFilter(FProcMeshSection i_in, FProcMeshSection& o_out, f
 		o_out.ProcVertexBuffer[i].Position = wv[i].FVectorConversion();
 	}
 }
+
+
+
+TArray<DVector> GeometryUtility::centralFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices)
+{
+
+	TArray<DVector> wv;
+	wv.Init(DVector(), i_vertices.Num());
+
+
+	float dx = 0.0f;
+	float dy = 0.0f;
+	float dz = 0.0f;
+	TArray<uint32> adjacentFaceIndices;
+	for (int vi = 0; vi < i_vertices.Num(); vi++)
+	{
+		wv[vi] = i_vertices[vi];
+		//if (vi != m_block) {
+		//	continue;
+		//}
+		// Find the sv neighboring vertices
+		findAdjacentFace(i_vertices, i_indices, i_vertices[vi], adjacentFaceIndices);
+
+		if (adjacentFaceIndices.Num() != 0)
+		{
+			dx = 0.0f;
+			dy = 0.0f;
+			dz = 0.0f;
+
+
+			// Add the vertices and divide by the number of vertices
+			for (int j = 0; j < adjacentFaceIndices.Num() - 2; j+=3)
+			{
+				dx += (i_vertices[adjacentFaceIndices[j]].X + i_vertices[adjacentFaceIndices[j + 1]].X + i_vertices[adjacentFaceIndices[j + 2]].X) / 3;
+				dy += (i_vertices[adjacentFaceIndices[j]].Y + i_vertices[adjacentFaceIndices[j + 1]].Y + i_vertices[adjacentFaceIndices[j + 2]].Y) / 3;
+				dz += (i_vertices[adjacentFaceIndices[j]].Z + i_vertices[adjacentFaceIndices[j + 1]].Z + i_vertices[adjacentFaceIndices[j + 2]].Z) / 3;
+			}
+
+			wv[vi].X = dx / (adjacentFaceIndices.Num() / 3);
+			wv[vi].Y = dy / (adjacentFaceIndices.Num() / 3);
+			wv[vi].Z = dz / (adjacentFaceIndices.Num() / 3);
+			//wv[vi] = wv[vi] + FVector(10, 10, 10);
+		}
+
+	}
+
+	return wv;
+}
+
+
 
 TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices)
 {
@@ -789,6 +844,42 @@ TArray<DVector> GeometryUtility::laplacianFilter(TArray<DVector> i_vertices, TAr
 	return wv;
 }
 
+void GeometryUtility::findAdjacentFace(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<uint32>& adjacentFaceIndex)
+{
+	TSet<int32> indicesSet;
+	adjacentFaceIndex.Empty();
+
+	for (int i = 0; i < i_vertices.Num(); i++)
+	{
+		if (i_vertices[i] == vertex)
+		{
+			for (int k = 0; k < i_indices.Num(); k = k + 3)
+			{
+				if (i == i_indices[k])
+				{
+					adjacentFaceIndex.Add(i);
+					adjacentFaceIndex.Add(i_indices[k + 1]);
+					adjacentFaceIndex.Add(i_indices[k + 2]);
+				}
+
+				if (i == i_indices[k + 1])
+				{
+					adjacentFaceIndex.Add(i);
+					adjacentFaceIndex.Add(i_indices[k + 2]);
+					adjacentFaceIndex.Add(i_indices[k]);
+				}
+
+				if (i == i_indices[k + 2])
+				{
+					adjacentFaceIndex.Add(i);
+					adjacentFaceIndex.Add(i_indices[k]);
+					adjacentFaceIndex.Add(i_indices[k + 1]);
+				}
+			}
+		}
+	}
+	
+}
 void GeometryUtility::findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>& adjacentI)
 {
 	TSet<int32> indicesSet;
