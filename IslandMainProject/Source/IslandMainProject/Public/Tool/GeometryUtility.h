@@ -90,6 +90,13 @@ public:
 		int32 i_ic,
 		float i_percision);
 	static void OutputMesh(const FProcMeshSection& i_mesh, UWorld* i_world, FColor i_color = FColor(0, 0, 0, 1), FVector i_offset = FVector(0, 0, 0));
+	static void updateMergeIndex(
+		TArray<int>& o_borderStatus, 
+		int& o_belonging, 
+		const TArray<bool>& i_vertexOldIdentifier, 
+		const TArray<int>& i_vertexPlaneOccupationStatus, 
+		const int& i_ria, const int& i_rib, const int i_ric);
+	static TMap<TPair<int, int>, int> m_lines;
 };
 
 class DVector
