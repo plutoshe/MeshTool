@@ -31,6 +31,31 @@ public:
 
 	}
 
+	class Edge
+	{
+	public:
+		int m_x;
+		int m_y;
+		Edge() {}
+		Edge(const Edge& i_v)
+		{
+			m_x = i_v.m_x;
+			m_y = i_v.m_y;
+		}
+		Edge(int i_x, int i_y) {
+			if (i_x < i_y)
+			{
+				m_x = i_x;
+				m_y = i_y;
+			}
+			else
+			{
+				m_x = i_y;
+				m_y = i_x;
+			}
+		}
+	};
+
 	template <class T>
 	class sortVertex {
 	public:
@@ -55,7 +80,7 @@ public:
 	static bool GetLineAndPlaneIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_planePoint, const DVector& i_planeNormal, DVector&o_intersection);
 	static bool GetLineAndLineIntersectionPoint(const DVector& i_va, const DVector& i_vb, const DVector& i_linea, const DVector& i_lineb, DVector&o_intersection);
 	static FProcMeshSection MeshCombination(FProcMeshSection i_meshA, FProcMeshSection i_meshB, int i_insertMode);
-	static TArray<int> m_vertexBorder[2];
+	static TArray<TSet<int>> m_vertexBorder[2];
 	static int m_currentVertexBorderID;
 	static int FindFather(TArray<int>& i_status, int i_a);
 	static void DisjointSetLink(TArray<int>& i_status, int i_a, int i_b);
@@ -97,6 +122,8 @@ public:
 		const TArray<int>& i_vertexPlaneOccupationStatus, 
 		const int& i_ria, const int& i_rib, const int i_ric);
 	static TMap<TPair<int, int>, int> m_lines;
+	static void updateNew(TArray<int>& o_vertexBorderStatus, TArray<int>& o_planeIntersectionMergeIndex, const TArray<TSet<int>> i_vertexBorderEdgeLinkStatus, const TArray<bool>& i_vertexOldIdentifier, const TArray<int>& i_vertexPlaneOccupationStatus, const int& i_ria);
+	static void updateNew2(TArray<int>& o_meshIndex, TArray<int>& i_vertexBoderStatus, const TArray<int>& i_vertexPlaneOccupationStatus, const TArray<bool>& i_vertexOldIdentifier, int i_ria, int i_rib, int i_ric);
 };
 
 class DVector
