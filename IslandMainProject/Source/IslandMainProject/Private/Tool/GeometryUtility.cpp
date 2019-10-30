@@ -659,7 +659,8 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 
 FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FProcMeshSection i_meshB, int i_insertMode)
 {
-	auto b = IsPointInPolyhedron(DVector(-10665, 130, 2555), i_meshB);
+	m_vertexBorder[0].Empty();
+	m_vertexBorder[1].Empty();
 	FProcMeshSection resultA, resultB;
 	FProcMeshSection resultCombine, finalResult;
 	TArray<bool> vertexOldIdentifierA;
@@ -725,9 +726,9 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 
 		vertexPlaneOccupationStatus.Init(0, p.Num());
 		vertexOldIdentifier.Init(false, p.Num());
-		
-		
-		
+
+
+
 		int32 verticesNumExcludingSamePoint = -1;
 		for (int pi = 0; pi < p.Num(); pi++)
 		{
@@ -755,23 +756,29 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			advanceIndexMapping.Init(-1, verticesExcludingSamePoint.Num());
 			for (int pi = 0; pi < verticesExcludingSamePoint.Num(); pi++)
 			{
-				
+
 				if (vertexOldIdentifier[pi] || vertexPlaneOccupationStatus[pi] == 3)
 				{
 					finalResult.ProcVertexBuffer.Add(verticesExcludingSamePoint[pi]);
 					advanceIndexMapping[pi] = finalResult.ProcVertexBuffer.Num() - 1;
-					
+
 				}
 
 			}
 		}
-		planeStatus.Init(false, resultA.ProcIndexBuffer.Num() / 3 + resultB.ProcIndexBuffer.Num() / 3);
+	}
+	planeStatus.Init(false, resultA.ProcIndexBuffer.Num() / 3 + resultB.ProcIndexBuffer.Num() / 3);
+	{
+		mergeIndex.Empty();
+		planeIntersectionMergeIndexA.Empty();
+		vertexBorderEdgeLinkStatus.Empty();
+		vertexBorderStatus.Empty();
 		mergeIndex.Init(-1, verticesExcludingSamePoint.Num());
-
+		
 		planeIntersectionMergeIndexA.Init(-1, i_meshB.ProcIndexBuffer.Num() / 3);
-		planeIntersectionMergeIndexB.Init(-1, i_meshA.ProcIndexBuffer.Num() / 3);
 		vertexBorderEdgeLinkStatus.Init(TSet<int>(), verticesExcludingSamePoint.Num());
 		vertexBorderStatus.Init(-1, verticesExcludingSamePoint.Num());
+
 		for (int i = 0; i < mergeIndex.Num(); i++)
 		{
 			mergeIndex[i] = i;
@@ -799,21 +806,23 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 				if (vertexPlaneOccupationStatus[ria] != 3 || vertexPlaneOccupationStatus[rib] != 3 || vertexPlaneOccupationStatus[ric] != 3)
 				{
 
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ria);
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, rib);
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ric);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ria, rib, ric);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, rib, ric, ria);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexA, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ric, ria, rib);
 				}
+				if (i / 3 >= m_block)
 				{
-					auto offset = FVector(2400, 0, 0);
-					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 1);
-					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 1);
-					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 1);
+					{
+						auto offset = FVector(0, 0, 0);
+						DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+					}
 				}
-				
-				
+
+
 			}
 		}
-
 		for (int i = 0; i < resultA.ProcIndexBuffer.Num() - 2; i += 3)
 		{
 			int ria = reversedIndex[resultA.ProcIndexBuffer[i]];
@@ -823,14 +832,120 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			if (planeStatus[i / 3])
 			{
 				// for plane status
-				updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, ria, rib, ric);
-				updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, rib, ric, ria);
-				updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, ric, ria, rib);
-				
+				if (vertexPlaneOccupationStatus[ria] != 3 || vertexPlaneOccupationStatus[rib] != 3 || vertexPlaneOccupationStatus[ric] != 3)
+				{
+					updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, ria, rib, ric);
+					updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, rib, ric, ria);
+					updateNew2(mergeIndex, vertexBorderStatus, vertexPlaneOccupationStatus, vertexOldIdentifier, ric, ria, rib);
+				}
+				if (i == 162)
+				{
+					auto offset = FVector(1000, 0, 0);
+					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 20);
+					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 20);
+					DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 20);
+
+				}
+
 			}
-					
+
+		}
+		if (i_insertMode != 1)
+		{
+			for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j += 3)
+			{
+				auto ria = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j]])];
+				auto rib = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 1]])];
+				auto ric = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 2]])];
+				auto va = verticesExcludingSamePoint[ria];
+				auto vb = verticesExcludingSamePoint[rib];
+				auto vc = verticesExcludingSamePoint[ric];
+
+				if ((ria != rib && ria != ric) && ((vertexOldIdentifier[ria] ||
+					vertexOldIdentifier[rib] ||
+					vertexOldIdentifier[ric]) || planeStatus[j / 3]))
+				{
+
+					/*if (j / 3 == m_block)
+					{
+						auto s1 = reversedIndex[resultA.ProcIndexBuffer[j + 2]];
+						auto s2 = FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 2]]);
+						auto s3 = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 2]])];
+						if (resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j]].Position != va.Position ||
+							resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 1]].Position != vb.Position ||
+							resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 2]].Position != vc.Position)
+						{
+							{
+								int i = j;
+								auto offset = FVector(1000, 0, 0);
+								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+							}
+							{
+								int i = j;
+								auto offset = FVector(2000, 0, 0);
+								DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+								DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+								DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+							}
+						}
+						
+					}
+					{
+						int i = j;
+						auto offset = FVector(0, 0, 0);
+						DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+					}*/
+					if (advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[rib] == -1 ||
+						advanceIndexMapping[ric] == -1)
+					{
+						int i = j;
+					}
+					else
+					{
+
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
+					}
+
+				}
+
+			}
+		}
+	}
+
+	{
+		mergeIndex.Empty();
+		planeIntersectionMergeIndexB.Empty();
+		vertexBorderEdgeLinkStatus.Empty();
+		vertexBorderStatus.Empty();
+		mergeIndex.Init(-1, verticesExcludingSamePoint.Num());
+		planeIntersectionMergeIndexB.Init(-1, i_meshA.ProcIndexBuffer.Num() / 3);
+		vertexBorderEdgeLinkStatus.Init(TSet<int>(), verticesExcludingSamePoint.Num());
+		vertexBorderStatus.Init(-1, verticesExcludingSamePoint.Num());
+
+		for (int i = 0; i < mergeIndex.Num(); i++)
+		{
+			mergeIndex[i] = i;
+		}
+		for (int i = 0; i < vertexBorderStatus.Num(); i++)
+		{
+			vertexBorderStatus[i] = i;
+		}
+		for (int i = 0; i < resultB.ProcVertexBuffer.Num(); i++)
+		{
+			vertexBorderEdgeLinkStatus[reversedIndex[i]].Append(m_vertexBorder[1][i]);
 		}
 
+		for (int i = 0; i < vertexBorderStatus.Num(); i++)
+		{
+			vertexBorderStatus[i] = i;
+		}
 		for (int i = 0; i < resultB.ProcIndexBuffer.Num() - 2; i += 3)
 		{
 			int ria = reversedIndex[resultB.ProcIndexBuffer[i] + resultA.ProcVertexBuffer.Num()];
@@ -855,11 +970,11 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 
 				if (vertexPlaneOccupationStatus[ria] != 3 || vertexPlaneOccupationStatus[rib] != 3 || vertexPlaneOccupationStatus[ric] != 3)
 				{
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ria);
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, rib);
-					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ric);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ria, rib, ric);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, rib, ric, ria);
+					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ric, ria, rib);
 				}
-				
+
 			}
 		}
 		for (int i = 0; i < resultB.ProcIndexBuffer.Num() - 2; i += 3)
@@ -879,70 +994,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 
 		}
 
-	}
-	// tackle final indices of mesh
-	{
-		if (i_insertMode != 1)
-		{
-			for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j += 3)
-			{
-				auto ria = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j]])];
-				auto rib = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 1]])];
-				auto ric = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 2]])];
-				auto va = verticesExcludingSamePoint[ria];
-				auto vb = verticesExcludingSamePoint[rib];
-				auto vc = verticesExcludingSamePoint[ric];
-				
-				if ((ria != rib && ria != ric) && ((vertexOldIdentifier[ria] ||
-					vertexOldIdentifier[rib] ||
-					vertexOldIdentifier[ric]) || planeStatus[j / 3]))
-				{
-
-					if (j / 3 >= m_block)
-					{
-						if (resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j]].Position != va.Position ||
-							resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 1]].Position != vb.Position ||
-							resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j + 2]].Position != vc.Position)
-						{
-							{
-								int i = j;
-								auto offset = FVector(1000, 0, 0);
-								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 1]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-								DrawDebugLine(m_world, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i + 2]].Position + offset, resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-							}
-							{
-								int i = j;
-								auto offset = FVector(2000, 0, 0);
-								DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-								DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-								DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-							}
-						}
-					}
-					{
-						int i = j;
-						auto offset = FVector(2500, 0, 1500);
-						DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
-						DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
-						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
-					}
-					if (advanceIndexMapping[ria] == -1 ||
-						advanceIndexMapping[ria] == -1 ||
-						advanceIndexMapping[ric] == -1)
-					{
-						int i = j;
-					}
-					else {
-						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
-						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
-						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
-					}
-				
-				}
-				
-			}
-		}
+		
 		
 		if (i_insertMode != 2)
 		{
@@ -967,7 +1019,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
 					}
 					if (advanceIndexMapping[ria] == -1 ||
-						advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[rib] == -1 ||
 						advanceIndexMapping[ric] == -1)
 					{
 						int i = j;
@@ -1013,7 +1065,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 	return finalResult;
 }
 
-void  GeometryUtility::updateNew(TArray<int>& o_vertexBorderStatus, TArray<int> &o_planeIntersectionMergeIndex, const TArray<TSet<int>> i_vertexBorderEdgeLinkStatus, const TArray<bool>& i_vertexOldIdentifier, const TArray<int>& i_vertexPlaneOccupationStatus, const int& i_ria)
+void  GeometryUtility::updateNew(TArray<int>& o_vertexBorderStatus, TArray<int> &o_planeIntersectionMergeIndex, const TArray<TSet<int>> i_vertexBorderEdgeLinkStatus, const TArray<bool>& i_vertexOldIdentifier, const TArray<int>& i_vertexPlaneOccupationStatus, const int& i_ria, const int& i_rib, const int& i_ric)
 {
 	if (!i_vertexOldIdentifier[i_ria] && i_vertexPlaneOccupationStatus[i_ria] != 3)
 	{
@@ -1022,7 +1074,16 @@ void  GeometryUtility::updateNew(TArray<int>& o_vertexBorderStatus, TArray<int> 
 			int j = 0;
 		}
 		int last = -1;
-		for (auto& Elem : i_vertexBorderEdgeLinkStatus[i_ria])
+		auto t1 = i_vertexBorderEdgeLinkStatus[i_ria].Intersect(i_vertexBorderEdgeLinkStatus[i_rib]);
+		if (!i_vertexOldIdentifier[i_rib] && i_vertexPlaneOccupationStatus[i_rib] != 3)
+		{
+			DisjointSetLink(o_vertexBorderStatus, i_ria, i_rib);
+		}
+		if (!i_vertexOldIdentifier[i_ric] && i_vertexPlaneOccupationStatus[i_ric] != 3)
+		{
+			DisjointSetLink(o_vertexBorderStatus, i_ria, i_ric);
+		}
+		/*for (auto& Elem : t1)
 		{
 
 			if (o_planeIntersectionMergeIndex[Elem] == -1)
@@ -1033,22 +1094,33 @@ void  GeometryUtility::updateNew(TArray<int>& o_vertexBorderStatus, TArray<int> 
 			{
 				DisjointSetLink(o_vertexBorderStatus, o_planeIntersectionMergeIndex[Elem], i_ria);
 			}
-		
 		}
+		auto t2 = i_vertexBorderEdgeLinkStatus[i_ria].Intersect(i_vertexBorderEdgeLinkStatus[i_ric]);
+		for (auto& Elem : t2)
+		{
+			if (o_planeIntersectionMergeIndex[Elem] == -1)
+			{
+				o_planeIntersectionMergeIndex[Elem] = i_ria;
+			}
+			else
+			{
+				DisjointSetLink(o_vertexBorderStatus, o_planeIntersectionMergeIndex[Elem], i_ria);
+			}
+		}*/
 	}
 
 }
 
 void GeometryUtility::updateNew2(TArray<int> &o_meshIndex, TArray<int> &i_vertexBoderStatus, const TArray<int> &i_vertexPlaneOccupationStatus, const TArray<bool> & i_vertexOldIdentifier, int i_ria, int i_rib, int i_ric)
 {
-	if (i_vertexPlaneOccupationStatus[i_ria] == 3)
+	if (!i_vertexOldIdentifier[i_ria] && i_vertexPlaneOccupationStatus[i_ria] == 3)
 	{
 		if (!i_vertexOldIdentifier[i_rib] && i_vertexPlaneOccupationStatus[i_rib] != 3)
 		{
 			o_meshIndex[FindFather(i_vertexBoderStatus, i_rib)] = i_ria;
 			
 		}
-		if (!i_vertexOldIdentifier[i_ric] && i_vertexPlaneOccupationStatus[i_ric] != 3 )
+		if (!i_vertexOldIdentifier[i_ric] && i_vertexPlaneOccupationStatus[i_ric] != 3)
 		{
 			o_meshIndex[FindFather(i_vertexBoderStatus, i_ric)] = i_ria;
 		}
