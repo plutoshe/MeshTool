@@ -6,7 +6,7 @@
 
 DVector const DVector::Zero(0, 0, 0);
 DVector const DVector::Unit(1, 1, 1);
-const double GeometryUtility::eps_const = 1e-4;
+const double GeometryUtility::eps_const = 1e-3;
 UWorld* GeometryUtility::m_world = nullptr;
 TArray<TSet<int>> GeometryUtility::m_vertexBorder[2] = { {}, {}};
 int GeometryUtility::m_currentVertexBorderID = 0;
@@ -232,9 +232,14 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 	{
 		return;
 	}
+	/*if (m_b == m_block - 1)
+	{
+		int i = 0;
+	}*/
 	DVector ova = o_vertices[o_indices[0]].m_Position;
 	DVector ovb = o_vertices[o_indices[1]].m_Position;
 	DVector ovc = o_vertices[o_indices[2]].m_Position;
+
 	auto doubleSortexMethod = [](const sortVertex<DVector>& a, const sortVertex<DVector>& b) {
 		if (GeometryUtility::eps(a.data.X - b.data.X) < 0)
 		{
@@ -387,7 +392,87 @@ void GeometryUtility::TraingleIntersectPolyhedron(
 
 	
 	}
+	/*auto b1 = DVector::CrossProduct(ovb - ova, ovc - ova);;
+
+	double area1 = FMath::Sqrt(b1.X * b1.X + b1.Y * b1.Y + b1.Z * b1.Z);
+	double area2 = 0;
+	for (int i = 0; i < o_indices.Num() - 2; i += 3)
+	{
+		int j = i;
+		uint32 ia = o_indices[j];
+		uint32 ib = o_indices[j + 1];
+		uint32 ic = o_indices[j + 2];
+		
+
+		auto sva = o_vertices[ia].m_Position;
+		auto svb = o_vertices[ib].m_Position;
+		auto svc = o_vertices[ic].m_Position;
+		b1 = DVector::CrossProduct(svb - sva, svc - sva);
+		area2 += FMath::Sqrt(b1.X * b1.X + b1.Y * b1.Y + b1.Z * b1.Z);
+	}
+	if (FMath::Abs(area1 - area2) > 1)
+	{
+
+		if (m_currentVertexBorderID != 1)
+		{
+			return;
+		}
+		m_a++;
+		if ( m_a != m_block)
+		{
+			return;
+		}
+		
+		for (int i = 0; i < o_indices.Num() - 2; i += 3)
+		{
+			int j = i;
+			uint32 ia = o_indices[j];
+			uint32 ib = o_indices[j + 1];
+			uint32 ic = o_indices[j + 2];
+
+
+			auto sva = o_vertices[ia].m_Position;
+			auto svb = o_vertices[ib].m_Position;
+			auto svc = o_vertices[ic].m_Position;
+			{
+				auto offset = FVector(2400, 0, 0);
+				DrawDebugLine(m_world, (sva + offset).FVectorConversion(), (svb + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+				DrawDebugLine(m_world, (svb + offset).FVectorConversion(), (svc + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+				DrawDebugLine(m_world, (svc + offset).FVectorConversion(), (sva + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+			}
+		}
+	}
+	
+	if (m_currentVertexBorderID == 1)
+	{
+		m_b++;
+	}
+	
+	if (m_b < m_block)
+	{
+		return;
+	}
+	for (int i = 0; i < o_indices.Num() - 2; i += 3)
+	{
+		int j = i;
+		uint32 ia = o_indices[j];
+		uint32 ib = o_indices[j + 1];
+		uint32 ic = o_indices[j + 2];
+
+
+		auto sva = o_vertices[ia].m_Position;
+		auto svb = o_vertices[ib].m_Position;
+		auto svc = o_vertices[ic].m_Position;
+		{
+			auto offset = FVector(2400, 0, 0);
+			DrawDebugLine(m_world, (sva + offset).FVectorConversion(), (svb + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, (svb + offset).FVectorConversion(), (svc + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+			DrawDebugLine(m_world, (svc + offset).FVectorConversion(), (sva + offset).FVectorConversion(), FColor(0, 0, 0, 1), true, -1, 0, 10);
+		}
+	}*/
 }
+int GeometryUtility::m_a = -1;
+int GeometryUtility::m_b = -1;
 
 int GeometryUtility::FindFather(TArray<int>& i_status, int i_a)
 {
@@ -443,6 +528,8 @@ bool GeometryUtility::IsPointOnLineSegment(const DVector &i_point, const DVector
 
 void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const FProcMeshSection& i_b, FProcMeshSection& o_result, TArray<bool> &o_oldvertexIdentifier)
 {
+	m_a = -1;
+	m_b = -1;
 	// initialization
 	TArray<bool> verticesInPlaneStatus;
 	TArray<uint32> indexConvdersion;
@@ -743,9 +830,22 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			int rib = reversedIndex[resultB.ProcIndexBuffer[i + 1] + resultA.ProcVertexBuffer.Num()];
 			int ric = reversedIndex[resultB.ProcIndexBuffer[i + 2] + resultA.ProcVertexBuffer.Num()];
 			DVector meshMiddlePoint = (verticesExcludingSamePoint[ria].Position + verticesExcludingSamePoint[rib].Position + verticesExcludingSamePoint[ric].Position) / 3;
+			//{
+			//	auto offset = FVector(2400, 0, 0);
+			//	DrawDebugLine(m_world, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i]].Position + offset, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i + 1]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			//	DrawDebugLine(m_world, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i + 1]].Position + offset, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i + 2]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			//	DrawDebugLine(m_world, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i + 2]].Position + offset, resultB.ProcVertexBuffer[resultB.ProcIndexBuffer[i]].Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+			//}
 			if (!(vertexOldIdentifier[ria] && vertexOldIdentifier[rib] && vertexOldIdentifier[ric]) && !IsPointInPolyhedron(meshMiddlePoint, i_meshA))
 			{
 				planeStatus[resultA.ProcIndexBuffer.Num() / 3 + i / 3] = true;
+				/*{
+					auto offset = FVector(2400, 0, 0);
+					DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+					DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+					DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+				}*/
+
 				if (vertexPlaneOccupationStatus[ria] != 3 || vertexPlaneOccupationStatus[rib] != 3 || vertexPlaneOccupationStatus[ric] != 3)
 				{
 					updateNew(vertexBorderStatus, planeIntersectionMergeIndexB, vertexBorderEdgeLinkStatus, vertexOldIdentifier, vertexPlaneOccupationStatus, ria);
@@ -821,12 +921,12 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 				}
 				else
 				{
-					{
-						auto offset = FVector(2400, 0, 0);
-						DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-						DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
-					}
+					//{
+					//	auto offset = FVector(2400, 0, 0);
+					//	DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+					//	DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+					//	DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
+					//}
 				}
 				//if ((ria != rib && ria != ric) && (vertexOldIdentifier[ria] ||
 				//	vertexOldIdentifier[rib] ||
