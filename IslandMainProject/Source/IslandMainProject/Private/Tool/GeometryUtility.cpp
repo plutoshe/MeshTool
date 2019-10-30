@@ -11,7 +11,7 @@ UWorld* GeometryUtility::m_world = nullptr;
 TArray<TSet<int>> GeometryUtility::m_vertexBorder[2] = { {}, {}};
 int GeometryUtility::m_currentVertexBorderID = 0;
 int GeometryUtility::m_block = -1;
-TMap<TPair<int, int>, int> GeometryUtility::m_lines;
+
 GeometryUtility::GeometryUtility()
 {
 }
@@ -588,6 +588,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 
 		if (i >= i_a.ProcVertexBuffer.Num() || !verticesInPlaneStatus[i])
 		{
+			m_vertexBorder[m_currentVertexBorderID][filteringVerticesNum] = m_vertexBorder[m_currentVertexBorderID][i];
 			o_result.ProcVertexBuffer.Add(addedVertices[i].ToProcVertex());
 			if (i >= i_a.ProcVertexBuffer.Num())
 			{
@@ -599,6 +600,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 			filteringVerticesNum++;
 		}
 	}
+
 
 	bool isInMesh = false;
 	int NeedNum = 0;
@@ -754,12 +756,12 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			for (int pi = 0; pi < verticesExcludingSamePoint.Num(); pi++)
 			{
 				
-				//if (vertexOldIdentifier[pi] || vertexPlaneOccupationStatus[pi] == 3)
-				//{
+				if (vertexOldIdentifier[pi] || vertexPlaneOccupationStatus[pi] == 3)
+				{
 					finalResult.ProcVertexBuffer.Add(verticesExcludingSamePoint[pi]);
 					advanceIndexMapping[pi] = finalResult.ProcVertexBuffer.Num() - 1;
 					
-				//}
+				}
 
 			}
 		}
@@ -884,9 +886,9 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 		{
 			for (int j = 0; j < resultA.ProcIndexBuffer.Num(); j += 3)
 			{
-				auto ria = mergeIndex[reversedIndex[resultA.ProcIndexBuffer[j]]];
-				auto rib = mergeIndex[reversedIndex[resultA.ProcIndexBuffer[j + 1]]];
-				auto ric = mergeIndex[reversedIndex[resultA.ProcIndexBuffer[j + 2]]];
+				auto ria = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j]])];
+				auto rib = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 1]])];
+				auto ric = mergeIndex[FindFather(vertexBorderStatus, reversedIndex[resultA.ProcIndexBuffer[j + 2]])];
 				auto va = verticesExcludingSamePoint[ria];
 				auto vb = verticesExcludingSamePoint[rib];
 				auto vc = verticesExcludingSamePoint[ric];
@@ -895,6 +897,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 					vertexOldIdentifier[rib] ||
 					vertexOldIdentifier[ric]) || planeStatus[j / 3]))
 				{
+
 					if (j / 3 >= m_block)
 					{
 						if (resultA.ProcVertexBuffer[resultA.ProcIndexBuffer[j]].Position != va.Position ||
@@ -910,16 +913,31 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 							}
 							{
 								int i = j;
-								auto offset = FVector(2500, 0, 1500);
+								auto offset = FVector(2000, 0, 0);
 								DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
 								DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
 								DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 10);
 							}
 						}
 					}
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
+					{
+						int i = j;
+						auto offset = FVector(2500, 0, 1500);
+						DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+					}
+					if (advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[ric] == -1)
+					{
+						int i = j;
+					}
+					else {
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
+					}
 				
 				}
 				
@@ -941,10 +959,25 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 					vertexOldIdentifier[rib] ||
 					vertexOldIdentifier[ric]) || planeStatus[resultA.ProcIndexBuffer.Num() / 3 + j / 3]))
 				{
-
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
-					finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
+					{
+						int i = j;
+						auto offset = FVector(2500, 0, 1500);
+						DrawDebugLine(m_world, va.Position + offset, vb.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vb.Position + offset, vc.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+						DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
+					}
+					if (advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[ria] == -1 ||
+						advanceIndexMapping[ric] == -1)
+					{
+						int i = j;
+					}
+					else
+					{
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ria]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[rib]);
+						finalResult.ProcIndexBuffer.Add(advanceIndexMapping[ric]);
+					}
 
 				}
 				else

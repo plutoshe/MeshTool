@@ -122,7 +122,7 @@ public:
 		const TArray<bool>& i_vertexOldIdentifier, 
 		const TArray<int>& i_vertexPlaneOccupationStatus, 
 		const int& i_ria, const int& i_rib, const int i_ric);
-	static TMap<TPair<int, int>, int> m_lines;
+
 	static void updateNew(TArray<int>& o_vertexBorderStatus, TArray<int>& o_planeIntersectionMergeIndex, const TArray<TSet<int>> i_vertexBorderEdgeLinkStatus, const TArray<bool>& i_vertexOldIdentifier, const TArray<int>& i_vertexPlaneOccupationStatus, const int& i_ria);
 	static void updateNew2(TArray<int>& o_meshIndex, TArray<int>& i_vertexBoderStatus, const TArray<int>& i_vertexPlaneOccupationStatus, const TArray<bool>& i_vertexOldIdentifier, int i_ria, int i_rib, int i_ric);
 	static int m_a;
