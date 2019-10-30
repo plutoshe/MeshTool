@@ -91,6 +91,7 @@ public:
 	static TArray<DVector> centralFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
 	static TArray<DVector> laplacianFilter(TArray<DVector> i_vertices, TArray<uint32> i_indices);
 	static TArray<DVector> laplacianFilterWithDistance(TArray<DVector> i_vertices, TArray<uint32> i_indices, float i_lambda = 1.0f);
+	static void laplacianFilterWithDistanceForPoint(DVector& o_result, DVector& i_origin, TArray<DVector> i_vertices, TArray<uint32> i_indices, float i_lambda);
 	/*static void laplacianFilterWithCurvatureFlow(TArray<DVector> i_vertices, TArray<uint32> i_indices);
 	static float GetCurveWeight(DVector origin, DVector adjcent, TArray<DVector>& adjVertices, TArray<uint32>& adjacentFaceIndex);*/
  	static void findAdjacentNeighbors(TArray<DVector> i_vertices, TArray<uint32> i_indices, DVector vertex, TArray<DVector>& adjacentV, TArray<uint32>&adjacentI);
