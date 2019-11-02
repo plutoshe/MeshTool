@@ -177,7 +177,7 @@ void AAMeshGenerator::AddMesh(UProceduralMeshComponent* i_addMesh, FTransform i_
 	{
 		FProcMeshSection addedMesh = *(m_mesh->GetProcMeshSection(i));
 
-		finalMesh = GeometryUtility::MeshCombination(finalMesh, addedMesh, m_insertMode);
+		finalMesh = GeometryUtility::MeshCombination(finalMesh, addedMesh, m_insertMode, m_meshConnectionSmooth);
 	}
 	
 

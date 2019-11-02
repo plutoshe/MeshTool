@@ -657,7 +657,7 @@ void GeometryUtility::MeshSectionIntersection(const FProcMeshSection& i_a, const
 	return;
 }
 
-FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FProcMeshSection i_meshB, int i_insertMode)
+FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FProcMeshSection i_meshB, int i_insertMode, bool i_MeshCombination)
 {
 	m_vertexBorder[0].Empty();
 	m_vertexBorder[1].Empty();
@@ -768,6 +768,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 		}
 	}
 	planeStatus.Init(false, resultA.ProcIndexBuffer.Num() / 3 + resultB.ProcIndexBuffer.Num() / 3);
+	// tracle A mesh
 	{
 		mergeIndex.Empty();
 		planeIntersectionMergeIndexA.Empty();
@@ -890,7 +891,7 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 								DrawDebugLine(m_world, vc.Position + offset, va.Position + offset, FColor(0, 0, 0, 1), true, -1, 0, 3);
 							}
 						}
-						
+
 					}
 					{
 						int i = j;
@@ -919,7 +920,10 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 		}
 	}
 
+	// tracle B mesh
+
 	{
+
 		mergeIndex.Empty();
 		planeIntersectionMergeIndexB.Empty();
 		vertexBorderEdgeLinkStatus.Empty();
@@ -993,9 +997,6 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			}
 
 		}
-
-		
-		
 		if (i_insertMode != 2)
 		{
 			for (int j = 0; j < resultB.ProcIndexBuffer.Num(); j += 3)
@@ -1062,6 +1063,36 @@ FProcMeshSection GeometryUtility::MeshCombination(FProcMeshSection i_meshA, FPro
 			}
 		}
 	}
+	if (i_MeshCombination)
+	{
+		TArray<DVector> finalVertices;
+		finalVertices.Empty();
+		int oldVerticesNum = finalResult.ProcVertexBuffer.Num();
+		for (int i = 0; i < oldVerticesNum; i++)
+		{
+			if (!vertexOldIdentifier[i])
+			{
+				DivisionPointFaces(finalResult, i, 100, 2);
+			}
+		}
+
+		for (int i = 0; i < finalResult.ProcVertexBuffer.Num(); i++)
+		{
+			finalVertices.Add(finalResult.ProcVertexBuffer[i].Position);
+		}
+		for (int i = 0; i < oldVerticesNum; i++)
+		{
+			if (!vertexOldIdentifier[i])
+			{
+				laplacianFilterWithDistanceForPoint(finalVertices[i], finalVertices[i], finalVertices, finalResult.ProcIndexBuffer, 1);
+			}
+		}
+		for (int i = 0; i < finalResult.ProcVertexBuffer.Num(); i++)
+		{
+			finalResult.ProcVertexBuffer[i].Position = finalVertices[i].FVectorConversion();
+		}
+	}
+	
 	return finalResult;
 }
 

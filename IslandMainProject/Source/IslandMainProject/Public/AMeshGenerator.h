@@ -48,5 +48,7 @@ public:
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		float m_beta;
 	UPROPERTY(EditAnywhere, BluePrintReadWrite)
+		bool m_meshConnectionSmooth;
+	UPROPERTY(EditAnywhere, BluePrintReadWrite)
 		UProceduralMeshComponent* m_mesh;
 };
